@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type AuctionCreateRequest struct {
 	ID int64 `json:"id,omitempty"`
@@ -10,15 +13,15 @@ type AuctionUpdateRequest struct {
 }
 
 type Auction struct {
-	ID          int64     `json:"id,omitempty"`
-	OwnerId     int64     `json:"ownerId,omitempty"`
-	Name        string    `json:"name,omitempty"`
-	Description string    `json:"description,omitempty"`
-	IsActive    bool      `json:"isActive,omitempty"`
-	IsPrivate   bool      `json:"isPrivate,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	DeletedAt   time.Time `json:"deletedAt"`
+	ID          int64        `json:"id,omitempty"`
+	OwnerId     int64        `json:"ownerId,omitempty"`
+	Name        string       `json:"name,omitempty"`
+	Description string       `json:"description,omitempty"`
+	IsActive    bool         `json:"isActive,omitempty"`
+	IsPrivate   bool         `json:"isPrivate,omitempty"`
+	CreatedAt   time.Time    `json:"createdAt"`
+	UpdatedAt   time.Time    `json:"updatedAt"`
+	DeletedAt   sql.NullTime `json:"-"`
 }
 
 func CreateAuction(id int64, ownerId int64, name string, description string, isPrivate bool) *Auction {
@@ -44,6 +47,15 @@ func CopyAuction(auction *Auction) Auction {
 	return *newAuction
 }
 
-func MapAuctionCreateRequest(request AuctionCreateRequest) *Auction {
-	return nil
+func MapAuctionCreateRequest(request AuctionCreateRequest, ownerId int64) *Auction {
+	return &Auction{
+		ID:          request.ID,
+		OwnerId:     ownerId,
+		Name:        "name",
+		Description: "description",
+		IsPrivate:   false,
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
 }

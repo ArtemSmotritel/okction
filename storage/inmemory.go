@@ -3,10 +3,12 @@ package storage
 import (
 	"fmt"
 	"github.com/artemsmotritel/oktion/types"
+	"time"
 )
 
 type InMemoryStore struct {
-	users []types.User
+	users    []types.User
+	auctions []types.Auction
 }
 
 func NewInMemoryStore() *InMemoryStore {
@@ -82,5 +84,68 @@ func (s *InMemoryStore) SeedData() error {
 		LastName:  "Sus",
 	},
 	}
+
+	s.auctions = []types.Auction{{
+		ID:          1,
+		Name:        "auction1",
+		Description: "lorem",
+		IsActive:    true,
+		IsPrivate:   false,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}, {
+		ID:          2,
+		Name:        "auction2",
+		Description: "lorem ipsum",
+		IsActive:    true,
+		IsPrivate:   true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}}
+
+	return nil
+}
+
+func (s *InMemoryStore) GetAuctionByID(id int64) (*types.Auction, error) {
+	for i := 0; i < len(s.auctions); i++ {
+		if s.auctions[i].ID == id {
+			auction := types.CopyAuction(&s.auctions[i])
+			return &auction, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no auction with id=%d", id)
+}
+
+func (s *InMemoryStore) GetAuctions() ([]types.Auction, error) {
+	res := make([]types.Auction, len(s.auctions))
+
+	for i := 0; i < len(s.auctions); i++ {
+		res[i] = types.CopyAuction(&s.auctions[i])
+	}
+
+	return res, nil
+}
+
+func (s *InMemoryStore) SaveAuction(auction *types.Auction) error {
+	s.auctions = append(s.auctions, types.CopyAuction(auction))
+
+	return nil
+}
+
+func (s *InMemoryStore) DeleteAuction(id int64) error {
+	idx := -1
+
+	for i := 0; i < len(s.auctions); i++ {
+		if id == s.auctions[i].ID {
+			idx = i
+		}
+	}
+
+	if idx != -1 {
+		s.auctions[idx] = s.auctions[len(s.auctions)-1]
+		s.auctions = s.auctions[:len(s.auctions)-1]
+	}
+
 	return nil
 }
