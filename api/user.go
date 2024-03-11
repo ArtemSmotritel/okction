@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artemsmotritel/oktion/types"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -31,9 +30,8 @@ func (s *Server) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// FIXME remove redundant declaration
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		log.Fatal(err.Error())
+	if err = json.NewEncoder(w).Encode(user); err != nil {
+		s.logger.Println("ERROR: ", err.Error())
 	}
 }
 
@@ -47,8 +45,8 @@ func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		log.Fatal(err.Error())
+	if err = json.NewEncoder(w).Encode(users); err != nil {
+		s.logger.Println("ERROR: ", err.Error())
 	}
 }
 
@@ -82,12 +80,12 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	bodyReader := json.NewDecoder(r.Body)
 	var userRequest types.UserUpdateRequest
 
-	if err := bodyReader.Decode(&userRequest); err != nil {
+	if err = bodyReader.Decode(&userRequest); err != nil {
 		s.badRequestError(w, r, "Bad request body")
 		return
 	}
 
-	if err := s.store.UpdateUser(id, &userRequest); err != nil {
+	if err = s.store.UpdateUser(id, &userRequest); err != nil {
 		s.internalError(w, r)
 		return
 	}
@@ -103,7 +101,7 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.store.DeleteUser(id); err != nil {
+	if err = s.store.DeleteUser(id); err != nil {
 		s.internalError(w, r)
 		return
 	}

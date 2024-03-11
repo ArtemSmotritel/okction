@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artemsmotritel/oktion/types"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -21,7 +20,7 @@ func (s *Server) handleGetAuctions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(w).Encode(auctions); err != nil {
-		log.Fatal(err.Error())
+		s.logger.Println("ERROR: ", err.Error())
 	}
 }
 
@@ -47,8 +46,8 @@ func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(auction); err != nil {
-		log.Fatal(err.Error())
+	if err = json.NewEncoder(w).Encode(auction); err != nil {
+		s.logger.Println("ERROR: ", err.Error())
 	}
 }
 

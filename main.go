@@ -21,18 +21,19 @@ func main() {
 	flag.Parse()
 
 	store := storage.NewInMemoryStore()
+	logger := log.Default()
 
 	if seed {
-		log.Println("Seeding data into the database...")
+		logger.Println("Seeding data into the database...")
 		if err := store.SeedData(); err != nil {
-			log.Fatal("Couldn't seed data into the database\n", err.Error())
+			logger.Fatal("Couldn't seed data into the database\n", err.Error())
 		}
-		log.Println("Finished seeding data into the database")
+		logger.Println("Finished seeding data into the database")
 	}
 
-	server := api.NewServer(address, store)
-	log.Println("Listening on", address)
+	server := api.NewServer(address, store, logger)
+	logger.Println("Listening on", address)
 	if err := server.Start(); err != nil {
-		log.Fatal(err.Error())
+		logger.Fatal(err.Error())
 	}
 }

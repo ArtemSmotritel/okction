@@ -10,12 +10,14 @@ import (
 type Server struct {
 	listenAddress string
 	store         storage.Storage
+	logger        *log.Logger
 }
 
-func NewServer(listenAddress string, store storage.Storage) *Server {
+func NewServer(listenAddress string, store storage.Storage, logger *log.Logger) *Server {
 	return &Server{
 		listenAddress: listenAddress,
 		store:         store,
+		logger:        logger,
 	}
 }
 
@@ -31,18 +33,19 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("GET /users/{id}", s.handleGetUserByID)
 	mux.HandleFunc("PUT /users/{id}", s.handleUpdateUser)
 	mux.HandleFunc("DELETE /users/{id}", s.handleDeleteUser)
+
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
 	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
-	return loggingMiddleware(mux)
+	return loggingMiddleware(mux, s.logger)
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
+func loggingMiddleware(next http.Handler, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l := fmt.Sprintf("New Request: method - %s, url - %s", r.Method, r.URL.Path)
-		log.Println(l)
+		logger.Println(l)
 		next.ServeHTTP(w, r)
 	})
 }
