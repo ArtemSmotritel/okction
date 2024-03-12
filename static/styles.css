@@ -1,0 +1,7 @@
+:root {
+    --pico-border-radius: 0;
+}
+
+.no-underscore {
+    text-decoration: none;
+}
