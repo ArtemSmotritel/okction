@@ -5,3 +5,10 @@
 .no-underscore {
     text-decoration: none;
 }
+
+.no-list-bullet-point {
+    li {
+        list-style: none;
+    }
+    padding-inline-start: 0;
+}
