@@ -14,5 +14,7 @@ type Storage interface {
 	SaveAuction(auction *types.Auction) error
 	DeleteAuction(id int64) error
 
+	GetCategories() ([]types.Category, error)
+
 	SeedData() error
 }

@@ -7,8 +7,9 @@ import (
 )
 
 type InMemoryStore struct {
-	users    []types.User
-	auctions []types.Auction
+	users      []types.User
+	auctions   []types.Auction
+	categories []types.Category
 }
 
 func NewInMemoryStore() *InMemoryStore {
@@ -103,6 +104,16 @@ func (s *InMemoryStore) SeedData() error {
 		UpdatedAt:   time.Now(),
 	}}
 
+	s.categories = []types.Category{{
+		ID:   1,
+		Name: "Sport",
+	},
+		{
+			ID:   11,
+			Name: "Clothes",
+		},
+	}
+
 	return nil
 }
 
@@ -148,4 +159,19 @@ func (s *InMemoryStore) DeleteAuction(id int64) error {
 	}
 
 	return nil
+}
+
+func (s *InMemoryStore) GetCategories() ([]types.Category, error) {
+	res := make([]types.Category, 0)
+
+	for _, c := range s.categories {
+		cc := types.Category{
+			ID:   c.ID,
+			Name: c.Name,
+		}
+
+		res = append(res, cc)
+	}
+
+	return res, nil
 }
