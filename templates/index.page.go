@@ -23,10 +23,10 @@ func (r *IndexPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 }
 
 func newIndexPage(categories []types.Category, ctx context.Context) templ.Component {
-	builder := NewHTMLPageBuilder(Root)
-	builder.AppendComponent(MainHeader(ctx.Value("isAuthorized").(bool)))
-	builder.AppendComponent(MainMain(categories...))
-	builder.AppendComponent(MainFooter())
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(ctx.Value("isAuthorized").(bool)))
+	builder.AppendComponent(mainMain(categories...))
+	builder.AppendComponent(mainFooter())
 
 	return builder.Build()
 }

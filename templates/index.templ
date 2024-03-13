@@ -5,50 +5,50 @@ import (
     "strconv"
 )
 
-templ MainHeader(isAuthorized bool) {
-    <header>
-      <nav>
-        <ul>
-          <h1><a href="/" class="contrast no-underscore"><strong>Oktion</strong></a></h1>
-        </ul>
-        <ul>
-          <li>
-            if isAuthorized {
-                <a href="/profile">
-                  <img style="width: 25px; margin-right: 5px;" src="/static/profile.svg" alt="a profile icon"/>Your profile
-                </a>
-            } else {
-                <a href="/login">
-                  Login
-                </a>
-            }
-          </li>
-          <li><button>Auction!</button></li>
-        </ul>
-      </nav>
-    </header>
+templ mainHeader(isAuthorized bool) {
+    @header() {
+        <nav>
+            <ul>
+              <h1><a href="/" class="contrast no-underscore"><strong>Oktion</strong></a></h1>
+            </ul>
+            <ul>
+              <li>
+                if isAuthorized {
+                    <a href="/profile" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
+                      <img style="width: 25px; margin-right: 5px;" src="/static/profile.svg" alt="a profile icon"/>Your profile
+                    </a>
+                } else {
+                    <a href="/login">
+                      Login
+                    </a>
+                }
+              </li>
+              <li><button>Auction!</button></li>
+            </ul>
+        </nav>
+    }
 }
 
-templ MainFooter() {
-    <footer>
+templ mainFooter() {
+    <footer class="container">
       <small>
         Created by me
       </small>
     </footer>
 }
 
-templ MainMain(categories ...types.Category) {
-    <main>
-      <h3>Categories</h3>
-      <ul>
-        for _, category := range categories {
-          <li><a href={ templ.URL("/category/" + strconv.FormatInt(category.ID, 10)) }>{ category.Name }</a></li>
-        }
-      </ul>
-    </main>
+templ mainMain(categories ...types.Category) {
+    @main() {
+        <h3>Categories</h3>
+          <ul>
+            for _, category := range categories {
+              <li><a href={ templ.URL("/category/" + strconv.FormatInt(category.ID, 10)) }>{ category.Name }</a></li>
+            }
+          </ul>
+    }
 }
 
-templ Root(components ...templ.Component) {
+templ root(components ...templ.Component) {
     <!doctype html>
     <html lang="en">
       <head>
@@ -62,7 +62,7 @@ templ Root(components ...templ.Component) {
         <link rel="stylesheet" href="/static/styles.css" />
         <title>Oktion</title>
       </head>
-      <body class="container">
+      <body>
         for _, component := range components {
             @component
         }
