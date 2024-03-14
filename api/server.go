@@ -59,7 +59,6 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
-	return loggingMiddleware(mux, s.logger)
 	return setUserInfoToContextMiddleware(loggingMiddleware(mux, s.logger))
 }
 
