@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
 	"net/http"
 	"strconv"
@@ -52,11 +53,8 @@ func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {
-	bodyReader := json.NewDecoder(r.Body)
-	var auctionRequest types.AuctionCreateRequest
-
-	if err := bodyReader.Decode(&auctionRequest); err != nil {
-		s.badRequestError(w, r, "Bad request body")
+	if err := r.ParseForm(); err != nil {
+		s.badRequestError(w, r, "Couldn't parse form")
 		return
 	}
 
@@ -66,14 +64,32 @@ func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {
 		s.badRequestError(w, r, "Invalid cookie")
 	}
 
-	auction := types.MapAuctionCreateRequest(auctionRequest, ownerID)
+	auction, err := types.MapAuctionCreateRequest(r.Form, ownerID)
 
-	if err = s.store.SaveAuction(auction); err != nil {
+	if err != nil {
+		s.badRequestError(w, r, "Bad form request: "+err.Error())
+		return
+	}
+
+	savedAuction, err := s.store.SaveAuction(auction)
+	if err != nil {
 		s.internalError(w, r)
 		return
 	}
 
+	w.Header().Add("HX-Push-Url", fmt.Sprintf("/auctions/%d/edit", savedAuction.ID))
+	renderer := templates.NewEditAuctionPageRenderer(savedAuction, []types.AuctionLot{
+		{
+			ID:   1,
+			Name: "Lot 1",
+		},
+		{
+			ID:   2,
+			Name: "Lot 2",
+		},
+	})
 	w.WriteHeader(http.StatusCreated)
+	renderer.ServeHTTP(w, r)
 }
 
 func (s *Server) handleDeleteAuction(w http.ResponseWriter, r *http.Request) {

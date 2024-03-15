@@ -1,0 +1,71 @@
+package templates
+
+import "github.com/artemsmotritel/oktion/types"
+
+templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
+    @main() {
+        <section class="grid">
+            <ul class="no-list-bullet-point">
+                <h3>Auction lots</h3>
+                for _, lot := range auctionLots {
+                    <li>
+                        <article role="group">
+                            <a>{ lot.Name }</a>
+                            <fieldset styles="max-width: 100px;" role="group">
+                                <button>Edit</button>
+                                <button>Delete</button>
+                            </fieldset>
+                        </article>
+                    </li>
+                }
+                <button type="button">Add a lot</button>
+            </ul>
+            @createAuctionForm(false, auction)
+        </section>
+    }
+}
+
+templ createAuctionForm(isNew bool, auction *types.Auction) {
+    <form id="create-auction-form-1" method="post" action="/auctions" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
+        if isNew {
+            <h3>Create your auction</h3>
+        } else {
+            <h3>Edit your auction</h3>
+        }
+        <label for="name-input">
+            Name it
+            <input
+            if !isNew {
+                value={auction.Name}
+             }
+            required type="text" autocomplete="off" name="name" id="name-input" placeholder="Awesome auction..."/>
+        </label>
+        <label for="description-input">
+            Describe it
+            <textarea required name="description" autocomplete="off" id="description-input" placeholder="Superb description...">
+                if !isNew {
+                    { auction.Description }
+                 }
+            </textarea>
+        </label>
+        <label for="private-input">
+            <input
+            if !isNew {
+                checked?={ auction.IsPrivate }
+            }
+            type="checkbox" name="private" id="private-input" />
+            Make it private
+        </label>
+        if isNew {
+            <input type="submit" value="Create"/>
+        } else {
+            <input type="submit" value="Save Changes"/>
+        }
+    </form>
+}
+
+templ createAuction() {
+    @main() {
+        @createAuctionForm(true, nil)
+    }
+}

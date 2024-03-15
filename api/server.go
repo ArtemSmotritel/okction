@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artemsmotritel/oktion/storage"
 	"github.com/artemsmotritel/oktion/templates"
+	"github.com/artemsmotritel/oktion/types"
 	"log"
 	"net/http"
 	"slices"
@@ -55,7 +56,9 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("DELETE /users/{id}", s.handleDeleteUser)
 
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
+	mux.HandleFunc("GET /auctions/new", s.handleNewAuction)
 	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
+	mux.HandleFunc("GET /auctions/{id}/edit", s.handleEditAuction)
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
@@ -123,6 +126,35 @@ func (s *Server) badRequestError(w http.ResponseWriter, _ *http.Request, message
 
 func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "Something went very wrong at our part...", http.StatusInternalServerError)
+}
+
+func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
+	renderer := templates.NewCreateAuctionPageRenderer()
+	renderer.ServeHTTP(w, r)
+}
+
+func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+		return
+	}
+
+	auction, err := s.store.GetAuctionByID(id)
+
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	if auction == nil {
+		s.handleNotFound(w, r)
+		return
+	}
+
+	renderer := templates.NewEditAuctionPageRenderer(auction, make([]types.AuctionLot, 0))
+	renderer.ServeHTTP(w, r)
 }
 
 func extractUserIDFromCookie(r *http.Request) (int64, error) {

@@ -138,10 +138,14 @@ func (s *InMemoryStore) GetAuctions() ([]types.Auction, error) {
 	return res, nil
 }
 
-func (s *InMemoryStore) SaveAuction(auction *types.Auction) error {
-	s.auctions = append(s.auctions, types.CopyAuction(auction))
+var id int64 = 0
 
-	return nil
+func (s *InMemoryStore) SaveAuction(auction *types.Auction) (*types.Auction, error) {
+	auction.ID = id
+	s.auctions = append(s.auctions, types.CopyAuction(auction))
+	id++
+
+	return auction, nil
 }
 
 func (s *InMemoryStore) DeleteAuction(id int64) error {

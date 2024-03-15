@@ -2,14 +2,40 @@ package types
 
 import (
 	"database/sql"
+	"errors"
+	"net/url"
 	"time"
 )
 
 type AuctionCreateRequest struct {
-	ID int64 `json:"id,omitempty"`
+	url.Values
 }
 
-type AuctionUpdateRequest struct {
+func (request *AuctionCreateRequest) name() (string, error) {
+	name := request.Get("name")
+	if name == "" {
+		return "", errors.New("no name was provided for the auction")
+	}
+	return name, nil
+}
+
+func (request *AuctionCreateRequest) description() (string, error) {
+	description := request.Get("description")
+	if description == "" {
+		return "", errors.New("no description was provided for the auction")
+	}
+	return description, nil
+}
+
+func (request *AuctionCreateRequest) private() (bool, error) {
+	isPrivate := false
+	private := request.Get("private")
+
+	if private == "on" {
+		isPrivate = true
+	}
+
+	return isPrivate, nil
 }
 
 type Auction struct {
@@ -47,15 +73,31 @@ func CopyAuction(auction *Auction) Auction {
 	return *newAuction
 }
 
-func MapAuctionCreateRequest(request AuctionCreateRequest, ownerId int64) *Auction {
-	return &Auction{
-		ID:          request.ID,
-		OwnerId:     ownerId,
-		Name:        "name",
-		Description: "description",
-		IsPrivate:   false,
-		IsActive:    true,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+func MapAuctionCreateRequest(values url.Values, ownerId int64) (*Auction, error) {
+	request := AuctionCreateRequest{values}
+
+	name, err := request.name()
+	if err != nil {
+		return nil, err
 	}
+
+	description, err := request.description()
+	if err != nil {
+		return nil, err
+	}
+
+	isPrivate, err := request.private()
+	if err != nil {
+		return nil, err
+	}
+
+	auction := &Auction{
+		IsActive:    false,
+		OwnerId:     ownerId,
+		Name:        name,
+		Description: description,
+		IsPrivate:   isPrivate,
+	}
+
+	return auction, nil
 }
