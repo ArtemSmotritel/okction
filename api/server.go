@@ -50,6 +50,8 @@ func (s *Server) newConfiguredRouter() http.Handler {
 		s.handleNotFound(w, r)
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
+	mux.HandleFunc("GET /my-auctions", s.handleGetMyAuctions)
+	mux.HandleFunc("GET /my-auctions/{id}/edit", s.handleEditAuction)
 	mux.HandleFunc("POST /my-auctions/{id}/lots", s.handleCreateAuctionLot)
 	mux.HandleFunc("GET /users", s.handleGetUsers)
 	mux.HandleFunc("POST /users", s.handleCreateUser)
@@ -60,7 +62,6 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
 	mux.HandleFunc("GET /auctions/new", s.handleNewAuction)
 	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
-	mux.HandleFunc("GET /auctions/{id}/edit", s.handleEditAuction)
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
@@ -156,6 +157,25 @@ func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderer := templates.NewEditAuctionPageRenderer(auction, make([]types.AuctionLot, 0))
+	renderer.ServeHTTP(w, r)
+}
+
+func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
+	_, err := extractUserIDFromCookie(r)
+
+	if err != nil {
+		s.badRequestError(w, r, "not authorized")
+		return
+	}
+
+	auctions, err := s.store.GetAuctions()
+
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	renderer := templates.NewMyAuctionsPageRenderer(auctions)
 	renderer.ServeHTTP(w, r)
 }
 

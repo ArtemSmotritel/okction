@@ -1,37 +1,38 @@
 package templates
 
 import "github.com/artemsmotritel/oktion/types"
+import "github.com/artemsmotritel/oktion/utils"
 
 templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
     @main() {
         <section class="grid">
-            <ul class="no-list-bullet-point">
-                <h3>Auction lots</h3>
-                for _, lot := range auctionLots {
-                    <li>
-                        <article role="group">
-                            <a>{ lot.Name }</a>
-                            <fieldset styles="max-width: 100px;" role="group">
-                                <button>Edit</button>
-                                <button>Delete</button>
-                            </fieldset>
-                        </article>
-                    </li>
-                }
-                <button type="button">Add a lot</button>
-            </ul>
-            @createAuctionForm(false, auction)
+            <section>
+                <h2>Auction lots</h2>
+                <ul class="no-list-bullet-point" id="auction-lots-list">
+                    for _, lot := range auctionLots {
+                        <li>
+                            <article role="group">
+                                <a>{ lot.Name }</a>
+                                <fieldset styles="max-width: 100px;" role="group">
+                                    <button>Edit</button>
+                                    <button>Delete</button>
+                                </fieldset>
+                            </article>
+                        </li>
+                    }
+                </ul>
+                <button type="button" hx-target="#auction-lots-list" hx-swap="beforeend" hx-post={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "lots") }>Add a lot</button>
+            </section>
+            <section>
+                <h2>Edit your auction</h2>
+                @createAuctionForm(false, auction)
+            </section>
         </section>
     }
 }
 
 templ createAuctionForm(isNew bool, auction *types.Auction) {
     <form id="create-auction-form-1" method="post" action="/auctions" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
-        if isNew {
-            <h3>Create your auction</h3>
-        } else {
-            <h3>Edit your auction</h3>
-        }
         <label for="name-input">
             Name it
             <input
@@ -64,8 +65,40 @@ templ createAuctionForm(isNew bool, auction *types.Auction) {
     </form>
 }
 
-templ createAuction() {
+templ createAuctionPage() {
     @main() {
+        <h2>Create your auction</h2>
         @createAuctionForm(true, nil)
     }
+}
+
+templ myAuctionsPage(auctions []types.Auction) {
+    @main() {
+        <h2>Your auctions</h2>
+        <ul>
+            for _, a := range auctions {
+                @auctionListItem(&a)
+            }
+        </ul>
+    }
+}
+
+templ auctionListItem(auction *types.Auction) {
+    <li class="grid narrow-row">
+        <h4><a class="secondary" href={ utils.ConvertToTemplURL("my-auctions", auction.ID, "edit") }>{ auction.Name }</a></h4>
+        <div class="auction-controls">
+            <p>5 lots</p>
+            <nav>
+                <details class="dropdown">
+                    <summary>
+                        ::
+                    </summary>
+                    <ul dir="rtl">
+                        <li><a href="">Edit</a></li>
+                        <li><a href="">Delete</a></li>
+                    </ul>
+                </details>
+            </nav>
+        </div>
+    </li>
 }
