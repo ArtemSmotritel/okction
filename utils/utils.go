@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"errors"
+	"github.com/a-h/templ"
+	"strconv"
 )
 
 func ExtractValueFromContext[T any](ctx context.Context, key string) (T, error) {
@@ -15,4 +17,28 @@ func ExtractValueFromContext[T any](ctx context.Context, key string) (T, error) 
 	}
 
 	return value, errors.New("couldn't extract the value from the context")
+}
+
+func ConvertToTemplURL(parts ...any) templ.SafeURL {
+	urlString := ""
+
+	for _, part := range parts {
+		urlString += "/"
+		switch v := part.(type) {
+		case int:
+			urlString += strconv.Itoa(v)
+		case int64:
+			urlString += strconv.FormatInt(v, 10)
+		case string:
+			urlString += v
+		default:
+			// TODO somehow pass the default logger here and log the missing type check
+		}
+	}
+
+	return templ.URL(urlString)
+}
+
+func ConvertToTemplStringURL(parts ...any) string {
+	return string(ConvertToTemplURL(parts...))
 }
