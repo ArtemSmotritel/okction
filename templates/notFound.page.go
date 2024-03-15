@@ -6,14 +6,14 @@ import (
 	"net/http"
 )
 
-type NotFoundPageRenderer struct {
+type NotFoundPageHandler struct {
 }
 
-func NewNotFoundPageRenderer() *NotFoundPageRenderer {
-	return &NotFoundPageRenderer{}
+func NewNotFoundPageHandler() *NotFoundPageHandler {
+	return &NotFoundPageHandler{}
 }
 
-func (r *NotFoundPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *NotFoundPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newNotFoundPage(re.Context()))
 	handler.ServeHTTP(w, re)
 }

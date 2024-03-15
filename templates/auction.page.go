@@ -8,51 +8,51 @@ import (
 	"net/http"
 )
 
-type CreateAuctionPageRenderer struct {
+type CreateAuctionPageHandler struct {
 }
 
-type EditAuctionPageRenderer struct {
+type EditAuctionPageHandler struct {
 	auctionLots []types.AuctionLot
 	auction     *types.Auction
 }
 
-type MyAuctionsPageRenderer struct {
+type MyAuctionsPageHandler struct {
 	auctions []types.Auction
 }
 
-func NewCreateAuctionPageRenderer() *CreateAuctionPageRenderer {
-	return &CreateAuctionPageRenderer{}
+func NewCreateAuctionPageHandler() *CreateAuctionPageHandler {
+	return &CreateAuctionPageHandler{}
 }
 
-func NewEditAuctionPageRenderer(auction *types.Auction, auctionLots []types.AuctionLot) *EditAuctionPageRenderer {
-	return &EditAuctionPageRenderer{
+func NewEditAuctionPageHandler(auction *types.Auction, auctionLots []types.AuctionLot) *EditAuctionPageHandler {
+	return &EditAuctionPageHandler{
 		auctionLots: auctionLots,
 		auction:     auction,
 	}
 }
 
-func NewMyAuctionsPageRenderer(auctions []types.Auction) *MyAuctionsPageRenderer {
-	return &MyAuctionsPageRenderer{
+func NewMyAuctionsPageHandler(auctions []types.Auction) *MyAuctionsPageHandler {
+	return &MyAuctionsPageHandler{
 		auctions: auctions,
 	}
 }
 
-func (r *CreateAuctionPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *CreateAuctionPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newCreateAuctionPage(re.Context()))
 	handler.ServeHTTP(w, re)
 }
 
-func (r *EditAuctionPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *EditAuctionPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newEditAuctionPage(re.Context(), r))
 	handler.ServeHTTP(w, re)
 }
 
-func (r *MyAuctionsPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *MyAuctionsPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newMyAuctionsPage(re.Context(), r))
 	handler.ServeHTTP(w, re)
 }
 
-func newEditAuctionPage(ctx context.Context, renderer *EditAuctionPageRenderer) templ.Component {
+func newEditAuctionPage(ctx context.Context, handler *EditAuctionPageHandler) templ.Component {
 	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
 
 	if err != nil {
@@ -60,7 +60,7 @@ func newEditAuctionPage(ctx context.Context, renderer *EditAuctionPageRenderer) 
 	}
 
 	if hxBoosted {
-		return editAuctionPage(renderer.auctionLots, renderer.auction)
+		return editAuctionPage(handler.auctionLots, handler.auction)
 	}
 
 	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
@@ -71,7 +71,7 @@ func newEditAuctionPage(ctx context.Context, renderer *EditAuctionPageRenderer) 
 
 	builder := NewHTMLPageBuilder(root)
 	builder.AppendComponent(mainHeader(isAuthorized))
-	builder.AppendComponent(editAuctionPage(renderer.auctionLots, renderer.auction))
+	builder.AppendComponent(editAuctionPage(handler.auctionLots, handler.auction))
 	builder.AppendComponent(mainFooter())
 
 	return builder.Build()
@@ -102,14 +102,14 @@ func newCreateAuctionPage(ctx context.Context) templ.Component {
 	return builder.Build()
 }
 
-func newMyAuctionsPage(ctx context.Context, renderer *MyAuctionsPageRenderer) templ.Component {
+func newMyAuctionsPage(ctx context.Context, handler *MyAuctionsPageHandler) templ.Component {
 	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
 	if err != nil {
 		hxBoosted = false
 	}
 
 	if hxBoosted {
-		return myAuctionsPage(renderer.auctions)
+		return myAuctionsPage(handler.auctions)
 	}
 
 	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
@@ -119,7 +119,7 @@ func newMyAuctionsPage(ctx context.Context, renderer *MyAuctionsPageRenderer) te
 
 	builder := NewHTMLPageBuilder(root)
 	builder.AppendComponent(mainHeader(isAuthorized))
-	builder.AppendComponent(myAuctionsPage(renderer.auctions))
+	builder.AppendComponent(myAuctionsPage(handler.auctions))
 	builder.AppendComponent(mainFooter())
 
 	return builder.Build()

@@ -11,17 +11,17 @@ type ProfileMenuItem struct {
 	Link string
 }
 
-type ProfilePageRenderer struct {
+type ProfilePageHandler struct {
 	shouldBuildWholePage bool
 }
 
-func NewProfilePageRenderer(shouldBuildWholePage bool) *ProfilePageRenderer {
-	return &ProfilePageRenderer{
+func NewProfilePageHandler(shouldBuildWholePage bool) *ProfilePageHandler {
+	return &ProfilePageHandler{
 		shouldBuildWholePage: shouldBuildWholePage,
 	}
 }
 
-func (r *ProfilePageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *ProfilePageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newProfilePage(re.Context(), r.shouldBuildWholePage))
 	handler.ServeHTTP(w, re)
 }

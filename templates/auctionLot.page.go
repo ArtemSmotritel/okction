@@ -6,17 +6,17 @@ import (
 	"net/http"
 )
 
-type AuctionLotListItemRenderer struct {
+type AuctionLotListItemHandler struct {
 	auctionId int64
 }
 
-func NewAuctionLotListItemRenderer(auctionId int64) *AuctionLotListItemRenderer {
-	return &AuctionLotListItemRenderer{
+func NewAuctionLotListItemHandler(auctionId int64) *AuctionLotListItemHandler {
+	return &AuctionLotListItemHandler{
 		auctionId: auctionId,
 	}
 }
 
-func (a *AuctionLotListItemRenderer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (a *AuctionLotListItemHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler := templ.Handler(newAuctionLotListItem(a.auctionId))
 	handler.ServeHTTP(w, r)
 }

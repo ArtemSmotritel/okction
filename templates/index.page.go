@@ -8,17 +8,17 @@ import (
 	"net/http"
 )
 
-type IndexPageRenderer struct {
+type IndexPageHandler struct {
 	categories []types.Category
 }
 
-func NewIndexPageRenderer(categories []types.Category) *IndexPageRenderer {
-	return &IndexPageRenderer{
+func NewIndexPageHandler(categories []types.Category) *IndexPageHandler {
+	return &IndexPageHandler{
 		categories: categories,
 	}
 }
 
-func (r *IndexPageRenderer) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+func (r *IndexPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
 	handler := templ.Handler(newIndexPage(r.categories, re.Context()))
 	handler.ServeHTTP(w, re)
 }

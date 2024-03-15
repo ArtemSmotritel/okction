@@ -34,3 +34,8 @@
 .grid.narrow-row {
     grid-row-gap: 0;
 }
+
+.narrow {
+    max-width: 576px;
+    padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
+}

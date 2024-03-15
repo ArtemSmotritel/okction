@@ -42,8 +42,8 @@ func (s *Server) newConfiguredRouter() http.Handler {
 		path := strings.TrimSpace(r.URL.Path)
 
 		if slices.Contains[[]string](homePaths, path) {
-			renderer := templates.NewIndexPageRenderer(categories)
-			renderer.ServeHTTP(w, r)
+			handler := templates.NewIndexPageHandler(categories)
+			handler.ServeHTTP(w, r)
 			return
 		}
 
@@ -74,8 +74,8 @@ func (s *Server) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		hxBoosted = false
 	}
 
-	renderer := templates.NewProfilePageRenderer(!hxBoosted)
-	renderer.ServeHTTP(w, r)
+	handler := templates.NewProfilePageHandler(!hxBoosted)
+	handler.ServeHTTP(w, r)
 }
 
 func getCookie(r *http.Request) (*http.Cookie, error) {
@@ -119,8 +119,8 @@ func loggingMiddleware(next http.Handler, logger *log.Logger) http.Handler {
 }
 
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
-	renderer := templates.NewNotFoundPageRenderer()
-	renderer.ServeHTTP(w, r)
+	handler := templates.NewNotFoundPageHandler()
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) badRequestError(w http.ResponseWriter, _ *http.Request, message string) {
@@ -134,6 +134,8 @@ func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
 	renderer := templates.NewCreateAuctionPageRenderer()
 	renderer.ServeHTTP(w, r)
+	handler := templates.NewCreateAuctionPageHandler()
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
@@ -156,8 +158,8 @@ func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderer := templates.NewEditAuctionPageRenderer(auction, make([]types.AuctionLot, 0))
-	renderer.ServeHTTP(w, r)
+	handler := templates.NewEditAuctionPageHandler(auction, make([]types.AuctionLot, 0))
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
@@ -175,8 +177,8 @@ func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderer := templates.NewMyAuctionsPageRenderer(auctions)
-	renderer.ServeHTTP(w, r)
+	handler := templates.NewMyAuctionsPageHandler(auctions)
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleCreateAuctionLot(w http.ResponseWriter, r *http.Request) {
@@ -199,8 +201,8 @@ func (s *Server) handleCreateAuctionLot(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	renderer := templates.NewAuctionLotListItemRenderer(id)
-	renderer.ServeHTTP(w, r)
+	handler := templates.NewAuctionLotListItemHandler(id)
+	handler.ServeHTTP(w, r)
 }
 
 func extractUserIDFromCookie(r *http.Request) (int64, error) {
