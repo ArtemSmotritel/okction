@@ -1,12 +1,8 @@
 package api
 
 import (
-	"context"
-	"fmt"
 	"github.com/artemsmotritel/oktion/storage"
 	"github.com/artemsmotritel/oktion/templates"
-	"github.com/artemsmotritel/oktion/types"
-	"github.com/artemsmotritel/oktion/utils"
 	"log"
 	"net/http"
 	"slices"
@@ -36,6 +32,9 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	mux.HandleFunc("GET /set", setCookie)
+
 	homePaths := []string{"/", "/home"}
 	categories, _ := s.store.GetCategories()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -68,56 +67,6 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	return setUserInfoToContextMiddleware(loggingMiddleware(mux, s.logger))
 }
 
-func (s *Server) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-	hxBoosted, err := utils.ExtractValueFromContext[bool](r.Context(), "hxBoosted")
-	if err != nil {
-		hxBoosted = false
-	}
-
-	handler := templates.NewProfilePageHandler(!hxBoosted)
-	handler.ServeHTTP(w, r)
-}
-
-func getCookie(r *http.Request) (*http.Cookie, error) {
-	cookie, err := r.Cookie("userId")
-	return cookie, err
-}
-func setUserInfoToContextMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id, err := extractUserIDFromCookie(r)
-
-		if err != nil {
-			r = r.WithContext(context.WithValue(r.Context(), "isAuthorized", false))
-		} else {
-			r = r.WithContext(context.WithValue(r.Context(), "userId", id))
-			r = r.WithContext(context.WithValue(r.Context(), "isAuthorized", true))
-		}
-
-		r = r.WithContext(context.WithValue(r.Context(), "hxBoosted", r.Header.Get("HX-Boosted") == "true"))
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func loggingMiddleware(next http.Handler, logger *log.Logger) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hxBoosted, _ := utils.ExtractValueFromContext[bool](r.Context(), "hxBoosted")
-
-		l := fmt.Sprintf("New Request: method - %s, url - %s, hx-boosted - %t", r.Method, r.URL.Path, hxBoosted)
-		logger.Println(l)
-
-		isAuth := r.Context().Value("isAuthorized").(bool)
-		l = fmt.Sprintf("User: isAuthorized - %t", isAuth)
-		if isAuth {
-			id := r.Context().Value("userId").(int64)
-			l += fmt.Sprintf(", id - %d", id)
-		}
-		logger.Println(l)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
 	handler := templates.NewNotFoundPageHandler()
 	handler.ServeHTTP(w, r)
@@ -129,78 +78,6 @@ func (s *Server) badRequestError(w http.ResponseWriter, _ *http.Request, message
 
 func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "Something went very wrong at our part...", http.StatusInternalServerError)
-}
-
-func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
-	handler := templates.NewCreateAuctionPageHandler()
-	handler.ServeHTTP(w, r)
-}
-
-func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-
-	if err != nil {
-		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
-		return
-	}
-
-	auction, err := s.store.GetAuctionByID(id)
-
-	if err != nil {
-		s.internalError(w, r)
-		return
-	}
-
-	if auction == nil {
-		s.handleNotFound(w, r)
-		return
-	}
-
-	handler := templates.NewEditAuctionPageHandler(auction, make([]types.AuctionLot, 0))
-	handler.ServeHTTP(w, r)
-}
-
-func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
-	_, err := extractUserIDFromCookie(r)
-
-	if err != nil {
-		s.badRequestError(w, r, "not authorized")
-		return
-	}
-
-	auctions, err := s.store.GetAuctions()
-
-	if err != nil {
-		s.internalError(w, r)
-		return
-	}
-
-	handler := templates.NewMyAuctionsPageHandler(auctions)
-	handler.ServeHTTP(w, r)
-}
-
-func (s *Server) handleCreateAuctionLot(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-
-	if err != nil {
-		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
-		return
-	}
-
-	auction, err := s.store.GetAuctionByID(id)
-
-	if err != nil {
-		s.internalError(w, r)
-		return
-	}
-
-	if auction == nil {
-		s.handleNotFound(w, r)
-		return
-	}
-
-	handler := templates.NewAuctionLotListItemHandler(id)
-	handler.ServeHTTP(w, r)
 }
 
 func extractUserIDFromCookie(r *http.Request) (int64, error) {

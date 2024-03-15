@@ -9,6 +9,54 @@ import (
 	"strconv"
 )
 
+func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
+	handler := templates.NewCreateAuctionPageHandler()
+	handler.ServeHTTP(w, r)
+}
+
+func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+		return
+	}
+
+	auction, err := s.store.GetAuctionByID(id)
+
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	if auction == nil {
+		s.handleNotFound(w, r)
+		return
+	}
+
+	handler := templates.NewEditAuctionPageHandler(auction, make([]types.AuctionLot, 0))
+	handler.ServeHTTP(w, r)
+}
+
+func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
+	_, err := extractUserIDFromCookie(r)
+
+	if err != nil {
+		s.badRequestError(w, r, "not authorized")
+		return
+	}
+
+	auctions, err := s.store.GetAuctions()
+
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewMyAuctionsPageHandler(auctions)
+	handler.ServeHTTP(w, r)
+}
+
 func (s *Server) handleGetAuctions(w http.ResponseWriter, r *http.Request) {
 	auctions, err := s.store.GetAuctions()
 
