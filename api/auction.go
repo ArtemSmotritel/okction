@@ -77,7 +77,7 @@ func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("HX-Push-Url", fmt.Sprintf("/auctions/%d/edit", savedAuction.ID))
+	w.Header().Add("HX-Push-Url", fmt.Sprintf("/my-auctions/%d/edit", savedAuction.ID))
 	renderer := templates.NewEditAuctionPageRenderer(savedAuction, []types.AuctionLot{
 		{
 			ID:   1,

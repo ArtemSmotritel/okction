@@ -22,3 +22,15 @@
     }
     padding-inline-start: 0;
 }
+
+.auction-controls {
+    display: flex;
+    justify-items: baseline;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: var(--pico-spacing);
+}
+
+.grid.narrow-row {
+    grid-row-gap: 0;
+}
