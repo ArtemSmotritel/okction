@@ -6,6 +6,7 @@ import (
 	"github.com/artemsmotritel/oktion/storage"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
+	"github.com/artemsmotritel/oktion/utils"
 	"log"
 	"net/http"
 	"slices"
@@ -66,14 +67,12 @@ func (s *Server) newConfiguredRouter() http.Handler {
 }
 
 func (s *Server) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-	shouldBuildWholePage := true
-	isBoosted := r.Context().Value("hxBoosted")
-
-	if val, ok := isBoosted.(bool); ok && val {
-		shouldBuildWholePage = false
+	hxBoosted, err := utils.ExtractValueFromContext[bool](r.Context(), "hxBoosted")
+	if err != nil {
+		hxBoosted = false
 	}
 
-	renderer := templates.NewProfilePageRenderer(shouldBuildWholePage)
+	renderer := templates.NewProfilePageRenderer(!hxBoosted)
 	renderer.ServeHTTP(w, r)
 }
 
@@ -100,7 +99,9 @@ func setUserInfoToContextMiddleware(next http.Handler) http.Handler {
 
 func loggingMiddleware(next http.Handler, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l := fmt.Sprintf("New Request: method - %s, url - %s", r.Method, r.URL.Path)
+		hxBoosted, _ := utils.ExtractValueFromContext[bool](r.Context(), "hxBoosted")
+
+		l := fmt.Sprintf("New Request: method - %s, url - %s, hx-boosted - %t", r.Method, r.URL.Path, hxBoosted)
 		logger.Println(l)
 
 		isAuth := r.Context().Value("isAuthorized").(bool)
