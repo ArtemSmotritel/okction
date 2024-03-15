@@ -30,7 +30,7 @@ func newProfilePage(ctx context.Context, shouldBuildWholePage bool) templ.Compon
 	items := []ProfileMenuItem{
 		{
 			Name: "My auctions",
-			Link: "/my-lots",
+			Link: "/my-auctions",
 		},
 		{
 			Name: "My Favorite lots",

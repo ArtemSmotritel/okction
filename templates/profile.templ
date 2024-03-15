@@ -3,27 +3,27 @@ package templates
 templ profile(menuItems []ProfileMenuItem) {
     @main() {
         <section class="grid">
-            <ul class="no-list-bullet-point">
-                for _, item := range menuItems {
-                    <li><article><a href={ templ.URL(item.Link) }>{ item.Name }</a></article></li>
-                }
-            </ul>
+            <section>
+                <h2>Your things</h2>
+                <ul class="no-list-bullet-point">
+                    for _, item := range menuItems {
+                        <li><article><a href={ templ.URL(item.Link) }>{ item.Name }</a></article></li>
+                    }
+                </ul>
+            </section>
             <form>
+                <h2>Your profile</h2>
                 <label for="email">
                     Email
-                    <input value="abobus@example.com" id="email" type="email" />
+                    <input autocomplete="email" name="email" value="abobus@example.com" id="email" type="email" />
                 </label>
                 <label for="phone">
                     Phone number
-                    <input value="+38054144488" id="phone" type="text" />
+                    <input autocomplete="tel" name="phone" value="+38054144488" id="phone" type="text" />
                 </label>
-                <label for="firstName">
+                <label for="fullName">
                     First name
-                    <input value="Abobus" id="firstName" type="text" />
-                </label>
-                <label for="lastName">
-                    Last name
-                    <input value="Sus" id="lastName" type="text" />
+                    <input autocomplete="name" name="fullName" value="Abobus" id="fullName" type="text" />
                 </label>
                 <input type="button" value="Change" />
             </form>
