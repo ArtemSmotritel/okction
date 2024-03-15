@@ -132,8 +132,6 @@ func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
-	renderer := templates.NewCreateAuctionPageRenderer()
-	renderer.ServeHTTP(w, r)
 	handler := templates.NewCreateAuctionPageHandler()
 	handler.ServeHTTP(w, r)
 }
