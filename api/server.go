@@ -50,6 +50,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 		s.handleNotFound(w, r)
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
+	mux.HandleFunc("POST /my-auctions/{id}/lots", s.handleCreateAuctionLot)
 	mux.HandleFunc("GET /users", s.handleGetUsers)
 	mux.HandleFunc("POST /users", s.handleCreateUser)
 	mux.HandleFunc("GET /users/{id}", s.handleGetUserByID)
@@ -155,6 +156,30 @@ func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderer := templates.NewEditAuctionPageRenderer(auction, make([]types.AuctionLot, 0))
+	renderer.ServeHTTP(w, r)
+}
+
+func (s *Server) handleCreateAuctionLot(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+		return
+	}
+
+	auction, err := s.store.GetAuctionByID(id)
+
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	if auction == nil {
+		s.handleNotFound(w, r)
+		return
+	}
+
+	renderer := templates.NewAuctionLotListItemRenderer(id)
 	renderer.ServeHTTP(w, r)
 }
 
