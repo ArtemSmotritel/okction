@@ -29,15 +29,15 @@ func (r *ProfilePageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) 
 func newProfilePage(ctx context.Context, shouldBuildWholePage bool) templ.Component {
 	items := []ProfileMenuItem{
 		{
-			Name: "My auctions",
+			Name: "Your auctions",
 			Link: "/my-auctions",
 		},
 		{
-			Name: "My Favorite lots",
+			Name: "Your Favorite lots",
 			Link: "/my-favorite-lots",
 		},
 		{
-			Name: "My bids",
+			Name: "Your bids",
 			Link: "/my-bids",
 		},
 	}
