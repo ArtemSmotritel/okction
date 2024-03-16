@@ -9,6 +9,8 @@ type Storage interface {
 	UpdateUser(id int64, request *types.UserUpdateRequest) error
 	DeleteUser(id int64) error
 
+	GetAuctionsByOwnerId(ownerId int64) ([]types.Auction, error)
+	GetOwnerIDByAuctionID(auctionId int64) (int64, error)
 	GetAuctionByID(id int64) (*types.Auction, error)
 	GetAuctions() ([]types.Auction, error)
 	SaveAuction(auction *types.Auction) (*types.Auction, error)

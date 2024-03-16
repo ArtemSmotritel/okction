@@ -88,6 +88,7 @@ func (s *InMemoryStore) SeedData() error {
 
 	s.auctions = []types.Auction{{
 		ID:          1,
+		OwnerId:     1,
 		Name:        "auction1",
 		Description: "lorem",
 		IsActive:    true,
@@ -96,6 +97,7 @@ func (s *InMemoryStore) SeedData() error {
 		UpdatedAt:   time.Now(),
 	}, {
 		ID:          2,
+		OwnerId:     4,
 		Name:        "auction2",
 		Description: "lorem ipsum",
 		IsActive:    true,
@@ -115,6 +117,28 @@ func (s *InMemoryStore) SeedData() error {
 	}
 
 	return nil
+}
+
+func (s *InMemoryStore) GetAuctionsByOwnerId(ownerId int64) ([]types.Auction, error) {
+	res := make([]types.Auction, 0)
+
+	for i := 0; i < len(s.auctions); i++ {
+		if s.auctions[i].OwnerId == ownerId {
+			res = append(res, types.CopyAuction(&s.auctions[i]))
+		}
+	}
+
+	return res, nil
+}
+
+func (s *InMemoryStore) GetOwnerIDByAuctionID(auctionId int64) (int64, error) {
+	for i := 0; i < len(s.auctions); i++ {
+		if s.auctions[i].ID == auctionId {
+			return s.auctions[i].OwnerId, nil
+		}
+	}
+
+	return int64(0), fmt.Errorf("no auction with id=%d", auctionId)
 }
 
 func (s *InMemoryStore) GetAuctionByID(id int64) (*types.Auction, error) {

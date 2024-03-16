@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
+	"github.com/artemsmotritel/oktion/utils"
 	"net/http"
 	"strconv"
 )
@@ -46,7 +47,13 @@ func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auctions, err := s.store.GetAuctions()
+	ownerId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+	if err != nil {
+		s.handleUnauthorized(w, r)
+		return
+	}
+
+	auctions, err := s.store.GetAuctionsByOwnerId(ownerId)
 
 	if err != nil {
 		s.internalError(w, r)
