@@ -64,20 +64,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
-	return setUserInfoToContextMiddleware(loggingMiddleware(mux, s.logger))
-}
-
-func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
-	handler := templates.NewNotFoundPageHandler()
-	handler.ServeHTTP(w, r)
-}
-
-func (s *Server) badRequestError(w http.ResponseWriter, _ *http.Request, message string) {
-	http.Error(w, message, http.StatusBadRequest)
-}
-
-func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "Something went very wrong at our part...", http.StatusInternalServerError)
+	return setUserInfoToContextMiddleware(loggingMiddleware(redirectUserMiddleware(mux), s.logger))
 }
 
 func extractUserIDFromCookie(r *http.Request) (int64, error) {

@@ -1,0 +1,38 @@
+package templates
+
+templ notFound() {
+    @main() {
+        <hr/>
+        <hgroup>
+            <h2>We couldn't find this page</h2>
+            <p>Maybe try something else...</p>
+        </hgroup>
+    }
+}
+
+templ unauthorized() {
+    @main() {
+        <hr />
+        <hgroup>
+            <h2>Hey, who are you?</h2>
+            <p>
+                Maybe you should login?
+                <a href="/login">
+                    Click here
+                </a>
+            </p>
+        </hgroup>
+    }
+}
+
+templ forbidden() {
+    @main() {
+        <hr />
+        <hgroup>
+            <h2>Hey, why are you here?</h2>
+            <p>
+                We think you are trespassing!
+            </p>
+        </hgroup>
+    }
+}
