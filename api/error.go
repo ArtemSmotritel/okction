@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
-	handler := templates.NewNotFoundPageHandler()
+	handler := templates.NewErrorPageHandler(templates.NotFound)
 	handler.ServeHTTP(w, r)
 }
 
@@ -14,16 +14,17 @@ func (s *Server) badRequestError(w http.ResponseWriter, _ *http.Request, message
 	http.Error(w, message, http.StatusBadRequest)
 }
 
-func (s *Server) internalError(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "Something went very wrong at our part...", http.StatusInternalServerError)
+func (s *Server) internalError(w http.ResponseWriter, r *http.Request) {
+	handler := templates.NewErrorPageHandler(templates.InternalServerError)
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleUnauthorized(w http.ResponseWriter, r *http.Request) {
-	handler := templates.NewUnauthorizedPageHandler()
+	handler := templates.NewErrorPageHandler(templates.Unauthorized)
 	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleForbidden(w http.ResponseWriter, r *http.Request) {
-	handler := templates.NewForbiddenPageHandler()
+	handler := templates.NewErrorPageHandler(templates.Forbidden)
 	handler.ServeHTTP(w, r)
 }
