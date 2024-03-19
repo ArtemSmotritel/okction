@@ -33,8 +33,6 @@ func (s *Server) newConfiguredRouter() http.Handler {
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	mux.HandleFunc("GET /set", setCookie)
-
 	homePaths := []string{"/", "/home"}
 	categories, _ := s.store.GetCategories()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -50,10 +48,16 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
 	mux.HandleFunc("GET /my-auctions", s.handleGetMyAuctions)
-	mux.HandleFunc("GET /my-auctions/{id}/edit", s.handleEditAuction)
-	mux.HandleFunc("POST /my-auctions/{id}/lots", s.handleCreateAuctionLot)
+	mux.HandleFunc("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(s.handleEditAuction, "id"))
+	mux.HandleFunc("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(s.handleCreateAuctionLot, "id"))
+
+	mux.Handle("GET /login", templates.NewLoginPageHandler())
+	mux.HandleFunc("POST /login", s.handleLogin)
+	mux.Handle("GET /sign-up", templates.NewSignUpPageHandler())
+	mux.HandleFunc("POST /sign-up", s.handleSignUp)
+	mux.HandleFunc("POST /logout", s.handleLogout)
+
 	mux.HandleFunc("GET /users", s.handleGetUsers)
-	mux.HandleFunc("POST /users", s.handleCreateUser)
 	mux.HandleFunc("GET /users/{id}", s.handleGetUserByID)
 	mux.HandleFunc("PUT /users/{id}", s.handleUpdateUser)
 	mux.HandleFunc("DELETE /users/{id}", s.handleDeleteUser)

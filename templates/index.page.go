@@ -9,38 +9,52 @@ import (
 )
 
 type IndexPageHandler struct {
-	categories []types.Category
+	categories            []types.Category
+	shouldRenderWholeBody bool
 }
 
 func NewIndexPageHandler(categories []types.Category) *IndexPageHandler {
 	return &IndexPageHandler{
-		categories: categories,
+		categories:            categories,
+		shouldRenderWholeBody: false,
 	}
 }
 
-func (r *IndexPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
-	handler := templ.Handler(newIndexPage(r.categories, re.Context()))
+func NewIndexBodyHandler(categories []types.Category) *IndexPageHandler {
+	return &IndexPageHandler{
+		categories:            categories,
+		shouldRenderWholeBody: true,
+	}
+}
+
+func (h *IndexPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {
+	handler := templ.Handler(h.newIndexPage(h.categories, re.Context()))
 	handler.ServeHTTP(w, re)
 }
 
-func newIndexPage(categories []types.Category, ctx context.Context) templ.Component {
-	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
-
-	if err != nil {
-		hxBoosted = false
-	}
-
-	if hxBoosted {
-		return mainMain(categories...)
-	}
-
+func (h *IndexPageHandler) newIndexPage(categories []types.Category, ctx context.Context) templ.Component {
 	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
-
 	if err != nil {
 		isAuthorized = false
 	}
 
-	builder := NewHTMLPageBuilder(root)
+	var builder *HTMLPageBuilder
+
+	if h.shouldRenderWholeBody {
+		builder = NewHTMLPageBuilder(body)
+	} else {
+		builder = NewHTMLPageBuilder(root)
+	}
+
+	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		hxBoosted = false
+	}
+
+	if hxBoosted && !h.shouldRenderWholeBody {
+		return mainMain(categories...)
+	}
+
 	builder.AppendComponent(mainHeader(isAuthorized))
 	builder.AppendComponent(mainMain(categories...))
 	builder.AppendComponent(mainFooter())

@@ -1,0 +1,117 @@
+package templates
+
+import "github.com/artemsmotritel/oktion/utils"
+
+templ login() {
+    @main() {
+        <article class="narrow container">
+            <h2>Welcome back!</h2>
+            @loginForm(utils.EmptyMap, utils.EmptyMap)
+            @divider("OR")
+            <input style="width: 100%;" type="button" class="secondary" hx-get="/sign-up" hx-swap="outerHTML" hx-target="#main" role="button" value="Sign up" />
+            <small>Do not have an account?</small>
+        </article>
+    }
+}
+
+templ loginForm(values map[string]string, errors map[string]string) {
+    <form id="login-form" hx-boost="true" action="/login" method="post" hx-swap="outerHTML" hx-target="body">
+        <label for="email-input">
+            Email
+            <input
+             if val, ok := values["email"]; ok {
+                 value={ val }
+             }
+             if _, ok := errors["email"]; ok {
+                 aria-invalid="true"
+                 aria-describedby="email-helper"
+             }
+             required name="email" id="email-input" autocomplete="email" type="email" placeholder="okt@example.com"/>
+             if err, ok := errors["email"]; ok {
+                 <small id="email-helper">{ err }</small>
+             }
+        </label>
+        <label for="password-input">
+            Password
+            <input
+            if val, ok := values["password"]; ok {
+                value={ val }
+            }
+            if _, ok := errors["password"]; ok {
+                aria-invalid="true"
+                aria-describedby="password-helper"
+            }
+            required name="password" id="password-input" autocomplete="new-password" type="password" placeholder="*****"/>
+            if err, ok := errors["password"]; ok {
+                <small id="password-helper">{ err }</small>
+            }
+        </label>
+        <button type="submit">Login</button>
+    </form>
+}
+
+templ signUpForm(values map[string]string, errors map[string]string) {
+    <form id="sign-up-form" hx-boost="true" action="/sign-up" method="post" hx-swap="outerHTML" hx-target="#main">
+        <label for="email-input">
+            Email
+            <input
+             if val, ok := values["email"]; ok {
+                 value={ val }
+             }
+             if _, ok := errors["email"]; ok {
+                 aria-invalid="true"
+                 aria-describedby="email-helper"
+             }
+             required name="email" id="email-input" autocomplete="email" type="email" placeholder="okt@example.com"/>
+             if err, ok := errors["email"]; ok {
+                 <small id="email-helper">{ err }</small>
+             }
+        </label>
+        <label for="password-input">
+            Password
+            <input
+            if val, ok := values["password"]; ok {
+                value={ val }
+            }
+            if _, ok := errors["password"]; ok {
+                aria-invalid="true"
+                aria-describedby="password-helper"
+            }
+            required name="password" id="password-input" autocomplete="new-password" type="password" placeholder="*****"/>
+            if err, ok := errors["password"]; ok {
+                <small id="password-helper">{ err }</small>
+            }
+        </label>
+        <label for="confirm-password-input">
+            Confirm password
+            <input
+            if val, ok := values["confirm-password"]; ok {
+                value={ val }
+            }
+            if _, ok := errors["confirm-password"]; ok {
+                aria-invalid="true"
+                aria-describedby="confirm-password-helper"
+            }
+            required name="confirm-password" id="confirm-password-input" autocomplete="new-password" type="password" placeholder="*****"/>
+            if err, ok := errors["confirm-password"]; ok {
+                <small id="confirm-password-helper">{ err }</small>
+            }
+        </label>
+        <button type="submit">Sign up</button>
+    </form>
+}
+
+templ signUp() {
+    @main() {
+        <article class="narrow container">
+            <hgroup>
+                <h2>Sign up</h2>
+                <p>Join us!</p>
+            </hgroup>
+            @signUpForm(utils.EmptyMap, utils.EmptyMap)
+            @divider("OR")
+            <input style="width: 100%;" type="button" class="secondary" hx-get="/login" hx-swap="outerHTML" hx-target="#main" role="button" value="Login" />
+            <small>Already have an account?</small>
+        </article>
+    }
+}

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/alexedwards/argon2id"
 	"github.com/artemsmotritel/oktion/types"
 	"time"
 )
@@ -20,7 +21,7 @@ func (s *InMemoryStore) GetUserByID(id int64) (*types.User, error) {
 	for i := 0; i < len(s.users); i++ {
 		if id == s.users[i].ID {
 			u := types.CopyUser(&s.users[i])
-			return &u, nil
+			return u, nil
 		}
 	}
 
@@ -31,22 +32,31 @@ func (s *InMemoryStore) GetUsers() ([]types.User, error) {
 	res := make([]types.User, len(s.users))
 
 	for i := 0; i < len(s.users); i++ {
-		res[i] = types.CopyUser(&s.users[i])
+		res[i] = *types.CopyUser(&s.users[i])
 	}
 
 	return res, nil
 }
 
 func (s *InMemoryStore) SaveUser(user *types.User) error {
-	s.users = append(s.users, types.CopyUser(user))
+	s.users = append(s.users, *types.CopyUser(user))
 	return nil
+}
+
+func (s *InMemoryStore) GetUserByEmail(email string) (*types.User, error) {
+	for _, user := range s.users {
+		if user.Email == email {
+			return types.CopyUser(&user), nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (s *InMemoryStore) UpdateUser(id int64, request *types.UserUpdateRequest) error {
 	for i := 0; i < len(s.users); i++ {
 		if id == s.users[i].ID {
-			s.users[i].FirstName = request.FirstName
-			s.users[i].LastName = request.LastName
+			s.users[i].FullName = request.FullName
 			return nil
 		}
 	}
@@ -71,18 +81,18 @@ func (s *InMemoryStore) DeleteUser(id int64) error {
 }
 
 func (s *InMemoryStore) SeedData() error {
+	pass, _ := argon2id.CreateHash("1234", argon2id.DefaultParams)
 	s.users = []types.User{{
-		ID:        1,
-		FirstName: "John",
-		LastName:  "Doe",
+		ID:       100,
+		FullName: "John",
+		Email:    "ready@ex.com",
+		Password: pass,
 	}, {
-		ID:        2,
-		FirstName: "Jane",
-		LastName:  "Doe",
+		ID:       200,
+		FullName: "Jane",
 	}, {
-		ID:        3,
-		FirstName: "Abobus",
-		LastName:  "Sus",
+		ID:       30,
+		FullName: "Abobus",
 	},
 	}
 

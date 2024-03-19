@@ -1,34 +1,26 @@
 package types
 
-type UserCreateRequest struct {
-	ID        int64  `json:"id,omitempty"`
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
+type User struct {
+	ID       int64  `json:"id,omitempty"`
+	FullName string `json:"firstName,omitempty"`
+	Password string `json:"-"`
+	Email    string
 }
 
 type UserUpdateRequest struct {
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
+	ID       int64
+	FullName string
 }
 
-type User struct {
-	ID        int64  `json:"id,omitempty"`
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
-}
-
-func CreateUser(id int64, firstName, lastName string) *User {
+func CreateUser(id int64, fullName string, email string, password string) *User {
 	return &User{
-		ID:        id,
-		FirstName: firstName,
-		LastName:  lastName,
+		ID:       id,
+		FullName: fullName,
+		Email:    email,
+		Password: password,
 	}
 }
 
-func CopyUser(user *User) User {
-	return *CreateUser(user.ID, user.FirstName, user.LastName)
-}
-
-func MapUserCreateRequest(request UserCreateRequest) *User {
-	return CreateUser(request.ID, request.FirstName, request.LastName)
+func CopyUser(user *User) *User {
+	return CreateUser(user.ID, user.FullName, user.Email, user.Password)
 }
