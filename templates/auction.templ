@@ -75,6 +75,10 @@ templ createAuctionPage() {
 templ myAuctionsPage(auctions []types.Auction) {
     @main() {
         <h2>Your auctions</h2>
+        if len(auctions) == 0 {
+            <p>You have no auctions yet.</p>
+            <a href="/auctions/new" hx-boost="true" class="secondary" role="button" hx-target="#main" hx-swap="outerHTML">Make one!</a>
+        }
         <ul>
             for _, a := range auctions {
                 @auctionListItem(&a)
