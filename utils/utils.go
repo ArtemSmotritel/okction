@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var EmptyMap = map[string]string{}
+
 func ExtractValueFromContext[T any](ctx context.Context, key string) (T, error) {
 	var value T
 	extractedVal := ctx.Value(key)

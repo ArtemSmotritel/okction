@@ -11,3 +11,19 @@ templ header() {
         { children... }
     </header>
 }
+
+templ divider(message string) {
+    <section class="divider">
+        <hr />
+        <small>{ message }</small>
+        <hr />
+    </section>
+}
+
+templ body(components ...templ.Component) {
+    <body>
+        for _, c := range components {
+            @c
+        }
+    </body>
+}
