@@ -5,3 +5,11 @@ type AuctionLot struct {
 	AuctionID int64
 	Name      string
 }
+
+func CopyAuctionLot(auctionLot *AuctionLot) *AuctionLot {
+	return &AuctionLot{
+		ID:        auctionLot.ID,
+		AuctionID: auctionLot.AuctionID,
+		Name:      auctionLot.Name,
+	}
+}

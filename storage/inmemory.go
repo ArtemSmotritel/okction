@@ -8,9 +8,10 @@ import (
 )
 
 type InMemoryStore struct {
-	users      []types.User
-	auctions   []types.Auction
-	categories []types.Category
+	users       []types.User
+	auctions    []types.Auction
+	categories  []types.Category
+	auctionLots []types.AuctionLot
 }
 
 func NewInMemoryStore() *InMemoryStore {
@@ -212,4 +213,36 @@ func (s *InMemoryStore) GetCategories() ([]types.Category, error) {
 	}
 
 	return res, nil
+}
+
+func (s *InMemoryStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.AuctionLot, error) {
+	res := make([]types.AuctionLot, 0)
+
+	for _, lot := range s.auctionLots {
+		if lot.AuctionID == auctionId {
+			res = append(res, *types.CopyAuctionLot(&lot))
+		}
+	}
+
+	return res, nil
+}
+
+func (s *InMemoryStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error) {
+	l := types.CopyAuctionLot(auctionLot)
+
+	s.auctionLots = append(s.auctionLots, *l)
+
+	return types.CopyAuctionLot(auctionLot), nil
+}
+
+func (s *InMemoryStore) GetAuctionLotCount(auctionId int64) (int, error) {
+	count := 0
+
+	for _, lot := range s.auctionLots {
+		if lot.AuctionID == auctionId {
+			count++
+		}
+	}
+
+	return count, nil
 }

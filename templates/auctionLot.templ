@@ -1,10 +1,11 @@
 package templates
 
 import "github.com/artemsmotritel/oktion/types"
+import "github.com/artemsmotritel/oktion/utils"
 
-templ auctionLotListItem(auctionLot *types.AuctionLot, auctionId int64) {
+templ auctionLotListItem(auctionLot *types.AuctionLot) {
     <li class="grid narrow-row">
-        <h5><a class="secondary" href={ "abobus" }>{ auctionLot.Name }</a></h5>
+        <h5><a class="secondary" href={ utils.ConvertToTemplURL("auctions", auctionLot.AuctionID, "lots", auctionLot.ID) }>{ auctionLot.Name }</a></h5>
         <div class="auction-controls">
             <p>asd</p>
             <nav>

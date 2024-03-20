@@ -1,6 +1,8 @@
 package templates
 
-templ profile(menuItems []ProfileMenuItem) {
+import "github.com/artemsmotritel/oktion/types"
+
+templ profile(menuItems []ProfileMenuItem, user *types.User) {
     @main() {
         <section class="grid">
             <section>
@@ -11,22 +13,37 @@ templ profile(menuItems []ProfileMenuItem) {
                     }
                 </ul>
             </section>
-            <form>
+            <section>
                 <h2>Your profile</h2>
-                <label for="email">
-                    Email
-                    <input autocomplete="email" name="email" value="abobus@example.com" id="email" type="email" />
-                </label>
-                <label for="phone">
-                    Phone number
-                    <input autocomplete="tel" name="phone" value="+38054144488" id="phone" type="text" />
-                </label>
-                <label for="fullName">
-                    First name
-                    <input autocomplete="name" name="fullName" value="Abobus" id="fullName" type="text" />
-                </label>
-                <input type="button" value="Change" />
-            </form>
+                @profileEditForm(user)
+            </section>
         </section>
     }
+}
+
+templ profileEditForm(user *types.User) {
+    <form>
+        <label for="email-input">
+            Email
+            <input
+            if user != nil {
+                value={user.Email}
+            }
+            required autocomplete="email" name="email" id="email-input" type="email" />
+        </label>
+        <label for="phone-input">
+            Phone number
+            <input
+            autocomplete="tel" name="phone" id="phone-input" type="tel" />
+        </label>
+        <label for="fullName-input">
+            First name
+            <input
+            if user != nil {
+                value={user.FullName}
+            }
+            required autocomplete="name" name="fullName" id="fullName-input" type="text" />
+        </label>
+        <input type="button" value="Change" />
+    </form>
 }

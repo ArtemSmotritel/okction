@@ -10,17 +10,12 @@ templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
                 <h2>Auction lots</h2>
                 <ul class="no-list-bullet-point" id="auction-lots-list">
                     for _, lot := range auctionLots {
-                        <li>
-                            <article role="group">
-                                <a>{ lot.Name }</a>
-                                <fieldset styles="max-width: 100px;" role="group">
-                                    <button>Edit</button>
-                                    <button>Delete</button>
-                                </fieldset>
-                            </article>
-                        </li>
+                        @auctionLotListItem(&lot)
                     }
                 </ul>
+                if len(auctionLots) == 0 {
+                    <p>This auction lot doesn't have any lots yet</p>
+                }
                 <button type="button" hx-target="#auction-lots-list" hx-swap="beforeend" hx-post={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "lots") }>Add a lot</button>
             </section>
             <section>

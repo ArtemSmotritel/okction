@@ -7,11 +7,18 @@ import (
 )
 
 func (s *Server) handleGetProfile(w http.ResponseWriter, r *http.Request) {
-	hxBoosted, err := utils.ExtractValueFromContext[bool](r.Context(), "hxBoosted")
+	userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
 	if err != nil {
-		hxBoosted = false
+		s.handleUnauthorized(w, r)
+		return
 	}
 
-	handler := templates.NewProfilePageHandler(!hxBoosted)
+	user, err := s.store.GetUserByID(userId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewProfilePageHandler(user)
 	handler.ServeHTTP(w, r)
 }

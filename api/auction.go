@@ -17,25 +17,28 @@ func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleEditAuction(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-
 	if err != nil {
 		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
 		return
 	}
 
 	auction, err := s.store.GetAuctionByID(id)
-
 	if err != nil {
 		s.internalError(w, r)
 		return
 	}
-
 	if auction == nil {
 		s.handleNotFound(w, r)
 		return
 	}
 
-	handler := templates.NewEditAuctionPageHandler(auction, make([]types.AuctionLot, 0))
+	auctionLots, err := s.store.GetAuctionLotsByAuctionID(auction.ID)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewEditAuctionPageHandler(auction, auctionLots)
 	handler.ServeHTTP(w, r)
 }
 
@@ -133,16 +136,7 @@ func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("HX-Push-Url", fmt.Sprintf("/my-auctions/%d/edit", savedAuction.ID))
-	handler := templates.NewEditAuctionPageHandler(savedAuction, []types.AuctionLot{
-		{
-			ID:   1,
-			Name: "Lot 1",
-		},
-		{
-			ID:   2,
-			Name: "Lot 2",
-		},
-	})
+	handler := templates.NewEditAuctionPageHandler(savedAuction, []types.AuctionLot{})
 	w.WriteHeader(http.StatusCreated)
 	handler.ServeHTTP(w, r)
 }

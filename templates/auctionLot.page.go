@@ -7,22 +7,20 @@ import (
 )
 
 type AuctionLotListItemHandler struct {
-	auctionId int64
+	auctionLot *types.AuctionLot
 }
 
-func NewAuctionLotListItemHandler(auctionId int64) *AuctionLotListItemHandler {
+func NewAuctionLotListItemHandler(auctionLot *types.AuctionLot) *AuctionLotListItemHandler {
 	return &AuctionLotListItemHandler{
-		auctionId: auctionId,
+		auctionLot: auctionLot,
 	}
 }
 
 func (a *AuctionLotListItemHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler := templ.Handler(newAuctionLotListItem(a.auctionId))
+	handler := templ.Handler(a.newAuctionLotListItem())
 	handler.ServeHTTP(w, r)
 }
 
-func newAuctionLotListItem(auctionId int64) templ.Component {
-	return auctionLotListItem(&types.AuctionLot{
-		Name: "Awesome Lot",
-	}, auctionId)
+func (a *AuctionLotListItemHandler) newAuctionLotListItem() templ.Component {
+	return auctionLotListItem(a.auctionLot)
 }
