@@ -1,0 +1,20 @@
+package form
+
+templ Input(attributes templ.Attributes) {
+    if attributes["type"] == TextArea {
+        <textarea { attributes... }>
+            if val, ok := attributes["value"].(string); ok && val != "" {
+                { val }
+            }
+        </textarea>
+    } else {
+        <input { attributes... } />
+    }
+}
+
+templ Label(label, inputId string) {
+    <label for={ inputId }>
+        { label }
+        { children... }
+    </label>
+}

@@ -2,10 +2,19 @@ package templates
 
 import "github.com/artemsmotritel/oktion/types"
 import "github.com/artemsmotritel/oktion/utils"
+import "github.com/artemsmotritel/oktion/templates/form"
 
 templ auctionLotListItem(auctionLot *types.AuctionLot) {
     <li class="grid narrow-row">
-        <h5><a class="secondary" href={ utils.ConvertToTemplURL("auctions", auctionLot.AuctionID, "lots", auctionLot.ID) }>{ auctionLot.Name }</a></h5>
+        <h5><a class="secondary"
+                href={ utils.ConvertToTemplURL("my-auctions", auctionLot.AuctionID, "lots", auctionLot.ID, "edit") }
+                hx-boost="true"
+                hx-target="#main"
+                hx-swap="outerHTML"
+                >
+                    { auctionLot.Name }
+            </a>
+        </h5>
         <div class="auction-controls">
             <p>asd</p>
             <nav>
@@ -21,4 +30,51 @@ templ auctionLotListItem(auctionLot *types.AuctionLot) {
             </nav>
         </div>
     </li>
+}
+
+templ auctionLotEditPage(auctionLot *types.AuctionLot) {
+    @main() {
+        <section class="grid">
+            <section>
+                <h2>Photos</h2>
+                if true {
+                    <p>This auction lot doesn't have any photos yet</p>
+                }
+                <button class="secondary">Add a photo</button>
+            </section>
+            <section>
+                <h2>Edit "{ auctionLot.Name }"</h2>
+                @editAuctionLotForm(auctionLot)
+            </section>
+        </section>
+    }
+}
+
+var lotNameInput *form.Field = &form.Field{
+	Name:            "name",
+	Required:        true,
+	ID:              "name-input",
+	Type:            form.Text,
+	Placeholder:     "Lot name...",
+	Autocomplete: form.Off,
+}
+
+var lotDescriptionInput *form.Field = &form.Field{
+	Name:            "description",
+	Required:        true,
+	ID:              "description-input",
+	Type:            form.TextArea,
+	Placeholder:     "Lot description...",
+	Autocomplete: form.Off,
+}
+
+templ editAuctionLotForm(auctionLot *types.AuctionLot) {
+    <form>
+        @form.Label("Name", lotNameInput.ID) {
+            @form.Input(lotNameInput.Attributes(auctionLot.Name))
+        }
+        @form.Label("Description", lotDescriptionInput.ID) {
+            @form.Input(lotDescriptionInput.Attributes(auctionLot.Description))
+        }
+    </form>
 }

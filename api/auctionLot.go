@@ -44,3 +44,26 @@ func (s *Server) handleCreateAuctionLot(w http.ResponseWriter, r *http.Request) 
 	handler := templates.NewAuctionLotListItemHandler(savedAuctionLot)
 	handler.ServeHTTP(w, r)
 }
+
+func (s *Server) handleEditAuctionLot(w http.ResponseWriter, r *http.Request) {
+	_, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("auctionId")))
+		return
+	}
+
+	lotId, err := strconv.ParseInt(r.PathValue("lotId"), 10, 64)
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction lot id in path: %s", r.PathValue("lotId")))
+		return
+	}
+
+	auctionLot, err := s.store.GetAuctionLotByID(lotId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewAuctionLotEditPageHandler(auctionLot)
+	handler.ServeHTTP(w, r)
+}

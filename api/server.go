@@ -50,6 +50,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("GET /my-auctions", s.handleGetMyAuctions)
 	mux.HandleFunc("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(s.handleEditAuction, "id"))
 	mux.HandleFunc("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(s.handleCreateAuctionLot, "id"))
+	mux.HandleFunc("GET /my-auctions/{auctionId}/lots/{lotId}/edit", s.protectAuctionsMiddleware(s.handleEditAuctionLot, "auctionId"))
 
 	mux.Handle("GET /login", templates.NewLoginPageHandler())
 	mux.HandleFunc("POST /login", s.handleLogin)
