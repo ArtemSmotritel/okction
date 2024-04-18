@@ -14,7 +14,7 @@ templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
                     }
                 </ul>
                 if len(auctionLots) == 0 {
-                    <p>This auction lot doesn't have any lots yet</p>
+                    <p>This auction doesn't have any lots yet</p>
                 }
                 <button type="button" hx-target="#auction-lots-list" hx-swap="beforeend" hx-post={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "lots") }>Add a lot</button>
             </section>
