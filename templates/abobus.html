@@ -1,0 +1,66 @@
+<section>
+    <form>
+        <h2>Your profile</h2>
+        <label for="email">
+            Email
+            <input name="email" autocomplete="email" value="abobus@example.com" id="email" type="email" />
+        </label>
+        <label for="phone">
+            Phone number
+            <input name="phone" autocomplete="tel" value="+38054144488" id="phone" type="text" />
+        </label>
+        <label for="fullName">
+            First name
+            <input name="fullName" autocomplete="name" value="Abobus" id="fullName" type="text" />
+        </label>
+        <input type="button" value="Change" />
+    </form>
+
+    <nav>
+        <details>
+            <summary>
+                :
+            </summary>
+            <ul>
+                <li><a href="">Edit</a></li>
+                <li><a href="">Delete</a></li>
+            </ul>
+        </details>
+    </nav>
+    <form role="search">
+        <label for="search-input">
+            Find yourself an auction
+        </label>
+        <input id="search-input" name="search" type="search" placeholder="Search" />
+        <input type="submit" value="Search" />
+    </form>
+    <ul>
+        <li role="group">
+            <h5>name</h5>
+            <p>description</p>
+            <mark>n lots</mark>
+            <i>autor name</i>
+            <a dir="rtl" href="" role="button">Edit</a>
+        </li>
+    </ul>
+    <form id="create-auction-form-1" method="post" action="/auctions" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
+        <hgroup>
+            <h3>Create your auction</h3>
+            <p><mark>step 1/3</mark></p>
+        </hgroup>
+        <label for="name-input">
+            Name your auction
+            <input type="text" autocomplete="off" name="name" id="name-input" placeholder="Awesome auction..."/>
+        </label>
+        <label for="description-input">
+            Add a description
+            <textarea name="description" id="description-input" placeholder="Superb description...">
+            </textarea>
+        </label>
+        <label for="private-input">
+            <input type="checkbox" name="private" id="private-input" />
+            Make it private
+        </label>
+        <input type="button" value="Proceed"/>
+    </form>
+</section>

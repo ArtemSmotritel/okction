@@ -14,6 +14,9 @@ type InMemoryStore struct {
 	auctionLots []types.AuctionLot
 }
 
+var auctionId int64 = 0
+var auctionLotId int64 = 0
+
 func NewInMemoryStore() *InMemoryStore {
 	return &InMemoryStore{}
 }
@@ -99,7 +102,7 @@ func (s *InMemoryStore) SeedData() error {
 
 	s.auctions = []types.Auction{{
 		ID:          1,
-		OwnerId:     1,
+		OwnerId:     100,
 		Name:        "auction1",
 		Description: "lorem",
 		IsActive:    true,
@@ -115,6 +118,16 @@ func (s *InMemoryStore) SeedData() error {
 		IsPrivate:   true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
+	}}
+
+	s.auctionLots = []types.AuctionLot{{
+		ID:        1,
+		AuctionID: 1,
+		Name:      "First lot",
+	}, {
+		ID:        2,
+		AuctionID: 2,
+		Name:      "First lot",
 	}}
 
 	s.categories = []types.Category{{
@@ -173,12 +186,10 @@ func (s *InMemoryStore) GetAuctions() ([]types.Auction, error) {
 	return res, nil
 }
 
-var id int64 = 0
-
 func (s *InMemoryStore) SaveAuction(auction *types.Auction) (*types.Auction, error) {
-	auction.ID = id
+	auction.ID = auctionId
 	s.auctions = append(s.auctions, types.CopyAuction(auction))
-	id++
+	auctionId++
 
 	return auction, nil
 }
@@ -228,7 +239,9 @@ func (s *InMemoryStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Auct
 }
 
 func (s *InMemoryStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error) {
+	auctionLotId++
 	l := types.CopyAuctionLot(auctionLot)
+	l.ID = auctionLotId
 
 	s.auctionLots = append(s.auctionLots, *l)
 
@@ -245,4 +258,14 @@ func (s *InMemoryStore) GetAuctionLotCount(auctionId int64) (int, error) {
 	}
 
 	return count, nil
+}
+
+func (s *InMemoryStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
+	for _, lot := range s.auctionLots {
+		if lot.ID == auctionLotId {
+			return types.CopyAuctionLot(&lot), nil
+		}
+	}
+
+	return nil, nil
 }
