@@ -4,12 +4,15 @@ type User struct {
 	ID       int64  `json:"id,omitempty"`
 	FullName string `json:"firstName,omitempty"`
 	Password string `json:"-"`
+	Phone    string `json:"phone,omitempty"`
 	Email    string
 }
 
 type UserUpdateRequest struct {
 	ID       int64
 	FullName string
+	Email    string
+	Phone    string
 }
 
 func CreateUser(id int64, fullName string, email string, password string) *User {
