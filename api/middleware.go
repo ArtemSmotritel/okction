@@ -11,8 +11,8 @@ import (
 	"strconv"
 )
 
-func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) onlyAuthorizedMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		isAuth, err := utils.ExtractValueFromContext[bool](r.Context(), "isAuthorized")
 		if err != nil {
 			isAuth = false
@@ -25,31 +25,38 @@ func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard 
 			return
 		}
 
-		userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			handler := templates.NewErrorPageHandler(templates.Unauthorized)
-			handler.ServeHTTP(w, r)
-			return
-		}
-
-		auctionId, err := strconv.ParseInt(r.PathValue(auctionIdWildcard), 10, 64)
-		if err != nil {
-			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
-			return
-		}
-
-		actualOwnerId, err := s.store.GetOwnerIDByAuctionID(auctionId)
-
-		if userId != actualOwnerId {
-			w.WriteHeader(http.StatusForbidden)
-			handler := templates.NewErrorPageHandler(templates.Forbidden)
-			handler.ServeHTTP(w, r)
-			return
-		}
-
 		next.ServeHTTP(w, r)
-	}
+	})
+}
+
+func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard string) http.Handler {
+	return s.onlyAuthorizedMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				handler := templates.NewErrorPageHandler(templates.Unauthorized)
+				handler.ServeHTTP(w, r)
+				return
+			}
+
+			auctionId, err := strconv.ParseInt(r.PathValue(auctionIdWildcard), 10, 64)
+			if err != nil {
+				s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+				return
+			}
+
+			actualOwnerId, err := s.store.GetOwnerIDByAuctionID(auctionId)
+
+			if userId != actualOwnerId {
+				w.WriteHeader(http.StatusForbidden)
+				handler := templates.NewErrorPageHandler(templates.Forbidden)
+				handler.ServeHTTP(w, r)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}))
 }
 
 func redirectUserMiddleware(next http.Handler) http.Handler {

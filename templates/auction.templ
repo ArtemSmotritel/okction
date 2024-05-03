@@ -85,25 +85,54 @@ templ myAuctionsPage(auctions []types.Auction) {
                 @auctionListItem(&a)
             }
         </ul>
+        <dialog id="confirm-archive-dialog">
+            <article>
+                <header>
+                    <button
+                    aria-label="Close"
+                    rel="prev"
+                    value="cancel"
+                    onclick="toggleModal(event)"
+                    ></button>
+                    <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                    Do you really want to archive this auction?
+                </p>
+                <footer>
+                    <button
+                    role="button"
+                    class="secondary"
+                    onclick="toggleModal(event)"
+                    value="cancel"
+                    >
+                        Cancel
+                    </button>
+                    <button value="confirm" autofocus onclick="toggleModal(event)">
+                        Confirm
+                    </button>
+                </footer>
+            </article>
+        </dialog>
     }
 }
 
 templ auctionListItem(auction *types.Auction) {
-    <li class="grid narrow-row">
+    <li id={ "auction-list-item-" + utils.IdToString(auction.ID) } class="grid narrow-row">
         <h4><a class="secondary" href={ utils.ConvertToTemplURL("my-auctions", auction.ID, "edit") }>{ auction.Name }</a></h4>
         <div class="auction-controls">
-            <p>5 lots</p>
-            <nav>
-                <details class="dropdown">
-                    <summary>
-                        ::
-                    </summary>
-                    <ul dir="rtl">
-                        <li><a href="">Edit</a></li>
-                        <li><a href="">Delete</a></li>
-                    </ul>
-                </details>
-            </nav>
+            <div role="group">
+                <input type="button" value="Edit" hx-swap="outerHTML" hx-push-url="true" hx-target="#main" hx-get={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "edit") }/>
+                <input
+                type="button"
+                value="Archive"
+                data-confirm-trigger="true"
+                class="secondary"
+                hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "archive") }
+                hx-confirm="confirm-archive-dialog"
+                hx-swap="outerHTML"
+                hx-target={ "#auction-list-item-" + utils.IdToString(auction.ID) }/>
+            </div>
         </div>
     </li>
 }

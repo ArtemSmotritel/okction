@@ -338,3 +338,12 @@ func (p *PostgresqlStore) UpdateAuction(update types.AuctionUpdateRequest) (*typ
 
 	return &auction, nil
 }
+
+func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error {
+	query := "UPDATE auction SET is_active = $1 WHERE id = $2"
+	if _, err := p.connection.Exec(context.Background(), query, isActive, id); err != nil {
+		return err
+	}
+
+	return nil
+}
