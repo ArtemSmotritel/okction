@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/artemsmotritel/oktion/api"
 	"github.com/artemsmotritel/oktion/storage"
+	pgxdecimal "github.com/jackc/pgx-shopspring-decimal"
+	"github.com/jackc/pgx/v5"
 	"log"
 )
 
@@ -14,14 +17,25 @@ func main() {
 	var (
 		seed    bool
 		address string
+		dbURL   string
 	)
 
 	flag.BoolVar(&seed, "seed", false, "seed some values in the database")
 	flag.StringVar(&address, "address", ":3000", "server address")
+	flag.StringVar(&dbURL, "db", "postgres://postgres:abobus@localhost:5432/oktion", "database connection url")
 	flag.Parse()
 
-	store := storage.NewInMemoryStore()
 	logger := log.Default()
+
+	conn, err := pgx.Connect(context.Background(), dbURL)
+	if err != nil {
+		logger.Fatalf("Unable to connect to database: %v\n", err)
+	}
+	defer conn.Close(context.Background())
+	pgxdecimal.Register(conn.TypeMap())
+
+	//store := storage.NewInMemoryStore()
+	store := storage.NewPostgresqlStore(conn, logger)
 
 	if seed {
 		logger.Println("Seeding data into the database...")
