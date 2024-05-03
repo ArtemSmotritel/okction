@@ -54,3 +54,7 @@ func (h *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler := templ.Handler(h.Template)
 	handler.ServeHTTP(w, r)
 }
+
+func IdToString(id int64) string {
+	return strconv.FormatInt(id, 10)
+}
