@@ -316,3 +316,25 @@ func (p *PostgresqlStore) GetCategories() ([]types.Category, error) {
 func (p *PostgresqlStore) SeedData() error {
 	return nil
 }
+
+func (p *PostgresqlStore) UpdateAuction(update types.AuctionUpdateRequest) (*types.Auction, error) {
+	query := "UPDATE auction SET name = @name, description = @description, is_private = @is_private, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_private, is_active, updated_at, created_at, deleted_at, owner_id"
+	args := pgx.NamedArgs{
+		"name":        update.Name,
+		"description": update.Description,
+		"is_private":  update.IsPrivate,
+		"updated_at":  time.Now(),
+		"id":          update.ID,
+	}
+
+	var auction types.Auction
+	auction.ID = update.ID
+
+	returningArgs := []any{&auction.Name, &auction.Description, &auction.IsPrivate, &auction.IsActive, &auction.UpdatedAt, &auction.CreatedAt, &auction.DeletedAt, &auction.OwnerId}
+
+	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
+		return nil, err
+	}
+
+	return &auction, nil
+}

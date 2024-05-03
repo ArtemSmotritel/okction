@@ -6,6 +6,7 @@ import (
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
+	"github.com/artemsmotritel/oktion/validation"
 	"net/http"
 	"strconv"
 )
@@ -155,4 +156,48 @@ func (s *Server) handleDeleteAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleUpdateAuction(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+		return
+	}
+
+	if err = r.ParseForm(); err != nil {
+		s.badRequestError(w, r, err.Error())
+		return
+	}
+
+	updateRequest := types.NewAuctionUpdateRequest(r.Form, id)
+	validator := validation.NewAuctionUpdateValidator(updateRequest)
+	ok, err := validator.Validate()
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	if !ok {
+		// TODO handle bad request
+		s.badRequestError(w, r, "Invalid update request")
+		return
+	}
+
+	updatedAuction, err := s.store.UpdateAuction(updateRequest)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	auctionLots, err := s.store.GetAuctionLotsByAuctionID(updatedAuction.ID)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewEditAuctionPageHandler(updatedAuction, auctionLots)
+	w.WriteHeader(http.StatusCreated)
+	handler.ServeHTTP(w, r)
 }

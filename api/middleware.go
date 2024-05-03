@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func (s *Server) protectAuctionsMiddleware(next http.HandlerFunc, auctionIdWildcard string) http.HandlerFunc {
+func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		isAuth, err := utils.ExtractValueFromContext[bool](r.Context(), "isAuthorized")
 		if err != nil {

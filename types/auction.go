@@ -101,3 +101,19 @@ func MapAuctionCreateRequest(values url.Values, ownerId int64) (*Auction, error)
 
 	return auction, nil
 }
+
+type AuctionUpdateRequest struct {
+	ID          int64
+	Name        string
+	Description string
+	IsPrivate   bool
+}
+
+func NewAuctionUpdateRequest(values url.Values, id int64) AuctionUpdateRequest {
+	return AuctionUpdateRequest{
+		Name:        values.Get("name"),
+		Description: values.Get("description"),
+		IsPrivate:   values.Get("private") == "on",
+		ID:          id,
+	}
+}

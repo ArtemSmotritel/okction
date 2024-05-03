@@ -48,9 +48,9 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
 	mux.HandleFunc("GET /my-auctions", s.handleGetMyAuctions)
-	mux.HandleFunc("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(s.handleEditAuction, "id"))
-	mux.HandleFunc("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(s.handleCreateAuctionLot, "id"))
-	mux.HandleFunc("GET /my-auctions/{auctionId}/lots/{lotId}/edit", s.protectAuctionsMiddleware(s.handleEditAuctionLot, "auctionId"))
+	mux.HandleFunc("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleEditAuction), "id"))
+	mux.HandleFunc("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleCreateAuctionLot), "id"))
+	mux.HandleFunc("GET /my-auctions/{auctionId}/lots/{lotId}/edit", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleEditAuctionLot), "auctionId"))
 
 	mux.Handle("GET /login", templates.NewLoginPageHandler())
 	mux.HandleFunc("POST /login", s.handleLogin)
@@ -66,6 +66,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
 	mux.HandleFunc("GET /auctions/new", s.handleNewAuction)
 	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
+	mux.HandleFunc("PUT /auctions/{id}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuction), "id"))
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 

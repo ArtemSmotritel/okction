@@ -27,7 +27,13 @@ templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
 }
 
 templ createAuctionForm(isNew bool, auction *types.Auction) {
-    <form id="create-auction-form-1" method="post" action="/auctions" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
+    <form id="create-auction-form-1" hx-boost="true" hx-target="#main" hx-swap="outerHTML"
+            if isNew {
+                method="post" action="/auctions"
+            } else {
+                method="put" action={ utils.ConvertToTemplURL("auctions", auction.ID) }
+            }
+    >
         <label for="name-input">
             Name it
             <input
