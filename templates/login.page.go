@@ -63,43 +63,26 @@ func newSignUpPage(ctx context.Context) templ.Component {
 	return builder.Build()
 }
 
-type FormErrorBadRequestHandler struct {
-	formTemplate templ.Component
-}
-
-func NewSignUpErrorBadRequestHandler(values map[string]string, errors map[string]string) *FormErrorBadRequestHandler {
+func NewSignUpErrorBadRequestHandler(values map[string]string, errors map[string]string) *utils.TemplateHandler {
 	if values == nil {
 		values = make(map[string]string)
 	}
 	if errors == nil {
 		errors = make(map[string]string)
 	}
-	return &FormErrorBadRequestHandler{
-		formTemplate: newSignUpErrorBadRequestForm(values, errors),
+	return &utils.TemplateHandler{
+		Template: signUpForm(values, errors),
 	}
 }
 
-func NewLoginErrorBadRequestHandler(values map[string]string, errors map[string]string) *FormErrorBadRequestHandler {
+func NewLoginErrorBadRequestHandler(values map[string]string, errors map[string]string) *utils.TemplateHandler {
 	if values == nil {
 		values = make(map[string]string)
 	}
 	if errors == nil {
 		errors = make(map[string]string)
 	}
-	return &FormErrorBadRequestHandler{
-		formTemplate: newLoginErrorBadRequestForm(values, errors),
+	return &utils.TemplateHandler{
+		Template: loginForm(values, errors),
 	}
-}
-
-func (s *FormErrorBadRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler := templ.Handler(s.formTemplate)
-	handler.ServeHTTP(w, r)
-}
-
-func newSignUpErrorBadRequestForm(values map[string]string, errors map[string]string) templ.Component {
-	return signUpForm(values, errors)
-}
-
-func newLoginErrorBadRequestForm(values map[string]string, errors map[string]string) templ.Component {
-	return loginForm(values, errors)
 }

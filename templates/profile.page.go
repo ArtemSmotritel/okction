@@ -60,3 +60,18 @@ func (h *ProfilePageHandler) newProfilePage(ctx context.Context) templ.Component
 
 	return builder.Build()
 }
+
+func NewEditProfileErrorBadRequestHandler(user *types.User, errors map[string]string) *utils.TemplateHandler {
+	if errors == nil {
+		errors = make(map[string]string)
+	}
+	return &utils.TemplateHandler{
+		Template: profileEditForm(user, errors),
+	}
+}
+
+func NewProfileFormHandler(user *types.User) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: profileEditForm(user, nil),
+	}
+}

@@ -1,5 +1,7 @@
 package types
 
+import "net/url"
+
 type User struct {
 	ID       int64  `json:"id,omitempty"`
 	FullName string `json:"firstName,omitempty"`
@@ -13,6 +15,15 @@ type UserUpdateRequest struct {
 	FullName string
 	Email    string
 	Phone    string
+}
+
+func NewUserUpdateRequest(values url.Values, id int64) UserUpdateRequest {
+	return UserUpdateRequest{
+		ID:       id,
+		FullName: values.Get("fullName"),
+		Email:    values.Get("email"),
+		Phone:    values.Get("phone"),
+	}
 }
 
 func CreateUser(id int64, fullName string, email string, password string) *User {

@@ -158,3 +158,29 @@ func IsEmailValid(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
+
+type UserUpdateValidator struct {
+	Errors  map[string]string
+	Request types.UserUpdateRequest
+}
+
+func NewUserUpdateValidator(update types.UserUpdateRequest) UserUpdateValidator {
+	return UserUpdateValidator{
+		Errors:  make(map[string]string),
+		Request: update,
+	}
+}
+
+func (v *UserUpdateValidator) Validate() (bool, error) {
+	// intentionally skip email update for now
+
+	if v.Request.Phone == "" {
+		v.Errors["phone"] = "Enter your phone number"
+	}
+
+	if v.Request.FullName == "" {
+		v.Errors["fullName"] = "Enter your name"
+	}
+
+	return len(v.Errors) == 0, nil
+}

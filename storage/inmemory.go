@@ -57,7 +57,7 @@ func (s *InMemoryStore) GetUserByEmail(email string) (*types.User, error) {
 	return nil, nil
 }
 
-func (s *InMemoryStore) UpdateUser(id int64, request *types.UserUpdateRequest) error {
+func (s *InMemoryStore) UpdateUser(id int64, request types.UserUpdateRequest) error {
 	for i := 0; i < len(s.users); i++ {
 		if id == s.users[i].ID {
 			s.users[i].FullName = request.FullName

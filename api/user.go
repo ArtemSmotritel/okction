@@ -162,20 +162,47 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bodyReader := json.NewDecoder(r.Body)
-	var userRequest types.UserUpdateRequest
-
-	if err = bodyReader.Decode(&userRequest); err != nil {
-		s.badRequestError(w, r, "Bad request body")
+	if err = r.ParseForm(); err != nil {
+		s.badRequestError(w, r, err.Error())
 		return
 	}
 
-	if err = s.store.UpdateUser(id, &userRequest); err != nil {
+	userUpdate := types.NewUserUpdateRequest(r.Form, id)
+	validator := validation.NewUserUpdateValidator(userUpdate)
+
+	ok, err := validator.Validate()
+
+	if err != nil {
 		s.internalError(w, r)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	if !ok {
+		userWithBadInfo := &types.User{
+			ID:       id,
+			FullName: userUpdate.FullName,
+			Phone:    userUpdate.Phone,
+			Email:    userUpdate.Email,
+		}
+		w.Header().Set("HX-Retarget", "#edit-profile-form")
+		w.Header().Set("HX-Reswap", "outerHTML")
+		handler := templates.NewEditProfileErrorBadRequestHandler(userWithBadInfo, validator.Errors)
+		handler.ServeHTTP(w, r)
+		return
+	}
+
+	user, err := s.store.UpdateUser(id, userUpdate)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	w.Header().Set("HX-Retarget", "#edit-profile-form")
+	w.Header().Set("HX-Reswap", "outerHTML")
+	w.Header().Set("HX-Replace-Url", "/profile")
+	handler := templates.NewProfileFormHandler(user)
+	handler.ServeHTTP(w, r)
+	w.WriteHeader(201)
 }
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {

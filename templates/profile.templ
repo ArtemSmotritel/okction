@@ -1,6 +1,8 @@
 package templates
 
 import "github.com/artemsmotritel/oktion/types"
+import "github.com/artemsmotritel/oktion/templates/form"
+import "github.com/artemsmotritel/oktion/utils"
 
 templ profile(menuItems []ProfileMenuItem, user *types.User) {
     @main() {
@@ -15,35 +17,66 @@ templ profile(menuItems []ProfileMenuItem, user *types.User) {
             </section>
             <section>
                 <h2>Your profile</h2>
-                @profileEditForm(user)
+                @profileEditForm(user, nil)
             </section>
         </section>
     }
 }
 
-templ profileEditForm(user *types.User) {
-    <form>
-        <label for="email-input">
-            Email
-            <input
-            if user != nil {
-                value={user.Email}
+var profileEmailInput *form.Field = &form.Field{
+	Name:            "email",
+	Required:        true,
+	ID:              "email-input",
+	Type:            form.EmailInputType,
+	Placeholder:     "Your email...",
+	Autocomplete:    form.EmailAutocomplete,
+	Disabled: true,
+}
+
+var profilePhoneInput *form.Field = &form.Field{
+	Name:            "phone",
+	Required:        true,
+	ID:              "phone-input",
+	Type:            form.PhoneInputType,
+	Placeholder:     "Your phone number...",
+	Autocomplete:    form.PhoneAutocomplete,
+}
+
+var profileFullNameInput *form.Field = &form.Field{
+	Name:            "fullName",
+	Required:        true,
+	ID:              "full-name-input",
+	Type:            form.TextInputType,
+	Placeholder:     "Your full name...",
+	Autocomplete:    form.FullNameAutocomplete,
+}
+
+templ profileEditForm(user *types.User, errors map[string]string) {
+    <form hx-boost="true" hx-target="#main" hx-swap="outerHTML" id="edit-profile-form" method="put" action={ utils.ConvertToTemplURL("users", user.ID) }>
+        @form.Label("Email", profileEmailInput.ID) {
+            @form.Input(profileEmailInput.WithErrors(errors).Attributes(user.Email))
+            if errors != nil {
+                if err, ok := errors[profileEmailInput.Name]; ok {
+                    <small id={ profileEmailInput.AriaDescribedBy }>{ err }</small>
+                }
             }
-            required autocomplete="email" name="email" id="email-input" type="email" />
-        </label>
-        <label for="phone-input">
-            Phone number
-            <input
-            autocomplete="tel" name="phone" id="phone-input" type="tel" />
-        </label>
-        <label for="fullName-input">
-            First name
-            <input
-            if user != nil {
-                value={user.FullName}
+        }
+        @form.Label("Phone number", profilePhoneInput.ID) {
+            @form.Input(profilePhoneInput.WithErrors(errors).Attributes(user.Phone))
+            if errors != nil {
+                if err, ok := errors[profilePhoneInput.Name]; ok {
+                    <small id={ profilePhoneInput.AriaDescribedBy }>{ err }</small>
+                }
             }
-            required autocomplete="name" name="fullName" id="fullName-input" type="text" />
-        </label>
-        <input type="button" value="Change" />
+        }
+        @form.Label("Full name", profileFullNameInput.ID) {
+            @form.Input(profileFullNameInput.WithErrors(errors).Attributes(user.FullName))
+            if errors != nil {
+                if err, ok := errors[profileFullNameInput.Name]; ok {
+                    <small id={ profileFullNameInput.AriaDescribedBy }>{ err }</small>
+                }
+            }
+        }
+        <input type="submit" value="Change" />
     </form>
 }

@@ -70,16 +70,21 @@ func (p *PostgresqlStore) SaveUser(user *types.User) error {
 	return nil
 }
 
-func (p *PostgresqlStore) UpdateUser(id int64, request *types.UserUpdateRequest) error {
-	query := "UPDATE users SET email = $1, fullname = $2, phone = $3 WHERE id = $4"
-	args := []any{request.Email, request.FullName, request.Phone, id}
+// UpdateUser DOES NOT update the user password or email
+func (p *PostgresqlStore) UpdateUser(id int64, request types.UserUpdateRequest) (*types.User, error) {
+	// intentionally skip email update for now
+	query := "UPDATE users SET fullname = $1, phone = $2 WHERE id = $3 RETURNING fullname, email, phone, password"
+	args := []any{request.FullName, request.Phone, id}
 
-	_, err := p.connection.Exec(context.Background(), query, args...)
+	var user types.User
+	user.ID = id
+
+	err := p.connection.QueryRow(context.Background(), query, args...).Scan(&user.FullName, &user.Email, &user.Phone, &user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &user, nil
 }
 
 func (p *PostgresqlStore) DeleteUser(id int64) error {

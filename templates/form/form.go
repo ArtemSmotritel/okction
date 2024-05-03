@@ -5,20 +5,22 @@ import "github.com/a-h/templ"
 type fieldAutocomplete string
 
 const (
-	Email       fieldAutocomplete = "email"
-	Password                      = "new-password"
-	OldPassword                   = "old-password"
-	FullName                      = "name"
-	Telephone                     = "tel"
-	Off                           = "off"
+	EmailAutocomplete       fieldAutocomplete = "email"
+	PasswordAutocomplete    fieldAutocomplete = "new-password"
+	OldPasswordAutocomplete fieldAutocomplete = "old-password"
+	FullNameAutocomplete    fieldAutocomplete = "name"
+	PhoneAutocomplete       fieldAutocomplete = "tel"
+	OffAutocomplete         fieldAutocomplete = "off"
 )
 
 type fieldInputType = string
 
 const (
-	Text     fieldInputType = "text"
-	TextArea                = "textarea"
-	Button                  = "button"
+	TextInputType     fieldInputType = "text"
+	TextAreaInputType fieldInputType = "textarea"
+	ButtonInputType   fieldInputType = "button"
+	EmailInputType    fieldInputType = "email"
+	PhoneInputType    fieldInputType = "tel"
 )
 
 type Field struct {
@@ -31,10 +33,23 @@ type Field struct {
 	AriaInvalid     string
 	AriaDescribedBy string
 	Value           any
+	Disabled        bool
 }
 
 func (f *Field) Attributes(value any) templ.Attributes {
 	return formFieldToTemplAttr(f, value)
+}
+
+func (f *Field) WithErrors(errs map[string]string) *Field {
+	if errs != nil && len(errs) > 0 {
+		name := f.Name
+		if _, ok := errs[name]; ok {
+			f.AriaInvalid = "true"
+			f.AriaDescribedBy = name + "-helper"
+		}
+	}
+
+	return f
 }
 
 func formFieldToTemplAttr(field *Field, value any) templ.Attributes {

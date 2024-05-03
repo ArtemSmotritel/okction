@@ -6,7 +6,7 @@ type Storage interface {
 	GetUserByID(id int64) (*types.User, error)
 	GetUsers() ([]types.User, error)
 	SaveUser(user *types.User) error
-	UpdateUser(id int64, request *types.UserUpdateRequest) error
+	UpdateUser(id int64, request types.UserUpdateRequest) (*types.User, error)
 	DeleteUser(id int64) error
 	GetUserByEmail(email string) (*types.User, error)
 
