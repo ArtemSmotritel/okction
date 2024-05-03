@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/a-h/templ"
+	"net/http"
 	"strconv"
 )
 
@@ -43,4 +44,13 @@ func ConvertToTemplURL(parts ...any) templ.SafeURL {
 
 func ConvertToTemplStringURL(parts ...any) string {
 	return string(ConvertToTemplURL(parts...))
+}
+
+type TemplateHandler struct {
+	Template templ.Component
+}
+
+func (h *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	handler := templ.Handler(h.Template)
+	handler.ServeHTTP(w, r)
 }
