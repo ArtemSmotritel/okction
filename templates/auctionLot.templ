@@ -4,31 +4,50 @@ import "github.com/artemsmotritel/oktion/types"
 import "github.com/artemsmotritel/oktion/utils"
 import "github.com/artemsmotritel/oktion/templates/form"
 
-templ auctionLotListItem(auctionLot *types.AuctionLot) {
+templ auctionLotListItem(lot *types.AuctionLot) {
     <li class="grid narrow-row">
-        <h5><a class="secondary"
-                href={ utils.ConvertToTemplURL("my-auctions", auctionLot.AuctionID, "lots", auctionLot.ID, "edit") }
-                hx-boost="true"
-                hx-target="#main"
-                hx-swap="outerHTML"
+        <details>
+            <summary role="button"
+                if lot.IsActive {
+                    class="outline contrast"
+                } else {
+                    class="outline secondary"
+                }
+            >{ lot.Name }</summary>
+            <div role="group">
+                <button class="outline">
+                    View
+                </button>
+                <button
+                    if lot.IsActive {
+                        hx-get={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
+                        hx-target="#main"
+                        hx-swap="outerHTML"
+                    } else {
+                        disabled
+                    }
                 >
-                    { auctionLot.Name }
-            </a>
-        </h5>
-        <div class="auction-controls">
-            <p>asd</p>
-            <nav>
-                <details class="dropdown">
-                    <summary>
-                        ::
-                    </summary>
-                    <ul dir="rtl">
-                        <li><a href={ utils.ConvertToTemplURL("my-auctions", auctionLot.AuctionID, "lots", auctionLot.ID, "edit") } >Edit</a></li>
-                        <li><a href="">Delete</a></li>
-                    </ul>
-                </details>
-            </nav>
-        </div>
+                    Edit
+                </button>
+                <button
+                    if lot.IsActive {
+                        hx-post={ utils.ConvertToTemplStringURL("auctions", lot.AuctionID, "lots", lot.ID, "archive") }
+                        hx-target="#auction-lots-section"
+                        hx-swap="outerHTML"
+                    } else {
+                        hx-post={ utils.ConvertToTemplStringURL("auctions", lot.AuctionID, "lots", lot.ID, "reinstate") }
+                        hx-target="#auction-lots-section"
+                        hx-swap="outerHTML"
+                    }
+                    class="secondary">
+                    if lot.IsActive {
+                        Archive
+                    } else {
+                        Reinstate
+                    }
+                </button>
+            </div>
+        </details>
     </li>
 }
 

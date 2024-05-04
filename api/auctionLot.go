@@ -129,3 +129,39 @@ func (s *Server) handleUpdateAuctionLot(w http.ResponseWriter, r *http.Request) 
 	handler := templates.NewAuctionLotEditFormHandler(auctionLot)
 	handler.ServeHTTP(w, r)
 }
+
+func (s *Server) handleSetAuctionLotActiveStatus(isActive bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		auctionId, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("auctionId")))
+			return
+		}
+
+		lotId, err := strconv.ParseInt(r.PathValue("lotId"), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction lot id in path: %s", r.PathValue("lotId")))
+			return
+		}
+
+		if err = s.store.SetAuctionLotActiveStatus(lotId, isActive); err != nil {
+			s.internalError(w, r)
+			return
+		}
+
+		lots, err := s.store.GetAuctionLotsByAuctionID(auctionId)
+		if err != nil {
+			s.internalError(w, r)
+			return
+		}
+
+		auction, err := s.store.GetAuctionByID(auctionId)
+		if err != nil {
+			s.internalError(w, r)
+			return
+		}
+
+		handler := templates.NewAuctionLotsListHandler(lots, auction)
+		handler.ServeHTTP(w, r)
+	}
+}

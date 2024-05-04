@@ -6,25 +6,41 @@ import "github.com/artemsmotritel/oktion/utils"
 templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
     @main() {
         <section class="grid">
-            <section>
-                <h2>Auction lots</h2>
-                <ul class="no-list-bullet-point" id="auction-lots-list">
-                    for _, lot := range auctionLots {
-                        @auctionLotListItem(&lot)
-                    }
-                </ul>
-                <!-- TODO: this thing needs to be removed after a user added his first auction -->
-                if len(auctionLots) == 0 {
-                    <p>This auction doesn't have any lots yet</p>
-                }
-                <button type="button" hx-target="#auction-lots-list" hx-swap="beforeend" hx-post={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "lots") }>Add a lot</button>
-            </section>
+            @auctionLotsList(auction, auctionLots)
             <section>
                 <h2>Edit your auction</h2>
                 @createAuctionForm(false, auction)
             </section>
         </section>
     }
+}
+
+templ auctionLotsList(auction *types.Auction, auctionLots []types.AuctionLot) {
+    <section id="auction-lots-section">
+        <h2>Auction lots</h2>
+        <ul class="no-list-bullet-point" id="auction-lots-list">
+            for _, lot := range auctionLots {
+                if lot.IsActive {
+                    @auctionLotListItem(&lot)
+                    <hr />
+                }
+            }
+        </ul>
+        <!-- TODO: this thing needs to be removed after a user added his first auction -->
+        if len(auctionLots) == 0 {
+            <p>This auction doesn't have any lots yet</p>
+        }
+        <button type="button" hx-target="#auction-lots-list" hx-swap="beforeend" hx-post={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "lots") }>Add a lot</button>
+        <h3>Archived auction lots</h3>
+        <ul class="no-list-bullet-point">
+            for _, lot := range auctionLots {
+                if !lot.IsActive {
+                    @auctionLotListItem(&lot)
+                    <hr />
+                }
+            }
+        </ul>
+    </section>
 }
 
 templ createAuctionForm(isNew bool, auction *types.Auction) {

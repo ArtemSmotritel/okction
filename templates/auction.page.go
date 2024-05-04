@@ -124,3 +124,9 @@ func newMyAuctionsPage(ctx context.Context, handler *MyAuctionsPageHandler) temp
 
 	return builder.Build()
 }
+
+func NewAuctionLotsListHandler(auctionLots []types.AuctionLot, auction *types.Auction) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: auctionLotsList(auction, auctionLots),
+	}
+}

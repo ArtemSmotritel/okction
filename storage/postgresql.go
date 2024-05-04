@@ -373,3 +373,13 @@ func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.Au
 
 	return &lot, nil
 }
+
+func (p *PostgresqlStore) SetAuctionLotActiveStatus(auctionLotId int64, isActive bool) error {
+	query := "UPDATE auction_lot SET is_active = $1 WHERE id = $2"
+
+	if _, err := p.connection.Exec(context.Background(), query, isActive, auctionLotId); err != nil {
+		return err
+	}
+
+	return nil
+}
