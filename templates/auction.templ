@@ -13,6 +13,7 @@ templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
                         @auctionLotListItem(&lot)
                     }
                 </ul>
+                <!-- TODO: this thing needs to be removed after a user added his first auction -->
                 if len(auctionLots) == 0 {
                     <p>This auction doesn't have any lots yet</p>
                 }
@@ -82,7 +83,17 @@ templ myAuctionsPage(auctions []types.Auction) {
         }
         <ul>
             for _, a := range auctions {
-                @auctionListItem(&a)
+                if a.IsActive {
+                    @auctionListItem(&a)
+                }
+            }
+        </ul>
+        <h3>Archive</h3>
+        <ul>
+            for _, a := range auctions {
+                if !a.IsActive {
+                    @auctionListItem(&a)
+                }
             }
         </ul>
         <dialog id="confirm-archive-dialog">
@@ -114,24 +125,75 @@ templ myAuctionsPage(auctions []types.Auction) {
                 </footer>
             </article>
         </dialog>
+        <dialog id="confirm-reinstate-dialog">
+            <article>
+                <header>
+                    <button
+                    aria-label="Close"
+                    rel="prev"
+                    value="cancel"
+                    onclick="toggleModal(event)"
+                    ></button>
+                    <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                    Do you really want to reinstate this auction?
+                </p>
+                <footer>
+                    <button
+                    role="button"
+                    class="secondary"
+                    onclick="toggleModal(event)"
+                    value="cancel"
+                    >
+                        Cancel
+                    </button>
+                    <button value="confirm" autofocus onclick="toggleModal(event)">
+                        Confirm
+                    </button>
+                </footer>
+            </article>
+        </dialog>
     }
 }
 
 templ auctionListItem(auction *types.Auction) {
     <li id={ "auction-list-item-" + utils.IdToString(auction.ID) } class="grid narrow-row">
-        <h4><a class="secondary" href={ utils.ConvertToTemplURL("my-auctions", auction.ID, "edit") }>{ auction.Name }</a></h4>
+        <h4><a
+            if auction.IsActive {
+                class="contrast"
+            } else {
+                class="secondary"
+            }
+            href={ utils.ConvertToTemplURL("my-auctions", auction.ID, "edit") } >{ auction.Name }</a></h4>
         <div class="auction-controls">
             <div role="group">
-                <input type="button" value="Edit" hx-swap="outerHTML" hx-push-url="true" hx-target="#main" hx-get={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "edit") }/>
+                <input
+                if !auction.IsActive {
+                    disabled
+                }
+                type="button"
+                value="Edit"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-target="#main"
+                hx-get={ utils.ConvertToTemplStringURL("my-auctions", auction.ID, "edit") }
+                />
                 <input
                 type="button"
-                value="Archive"
+                if auction.IsActive {
+                    value="Archive"
+                    hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "archive") }
+                    hx-confirm="confirm-archive-dialog"
+                } else {
+                    value="Reinstate"
+                    hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "reinstate") }
+                    hx-confirm="confirm-reinstate-dialog"
+                }
                 data-confirm-trigger="true"
                 class="secondary"
-                hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "archive") }
-                hx-confirm="confirm-archive-dialog"
                 hx-swap="outerHTML"
-                hx-target={ "#auction-list-item-" + utils.IdToString(auction.ID) }/>
+                hx-target="#main"/>
             </div>
         </div>
     </li>

@@ -68,6 +68,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
 	mux.Handle("PUT /auctions/{id}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuction), "id"))
 	mux.Handle("POST /auctions/{id}/archive", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleArchiveAuction), "id"))
+	mux.Handle("POST /auctions/{id}/reinstate", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleReinstateAuction), "id"))
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)
 
