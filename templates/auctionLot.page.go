@@ -16,26 +16,28 @@ func NewAuctionLotListItemHandler(auctionLot *types.AuctionLot) *utils.TemplateH
 
 type AuctionLotEditPageHandler struct {
 	auctionLot *types.AuctionLot
+	categories []types.Category
 }
 
-func NewAuctionLotEditPageHandler(auctionLot *types.AuctionLot) *AuctionLotEditPageHandler {
+func NewAuctionLotEditPageHandler(auctionLot *types.AuctionLot, categories []types.Category) *AuctionLotEditPageHandler {
 	return &AuctionLotEditPageHandler{
 		auctionLot: auctionLot,
+		categories: categories,
 	}
 }
 
-func NewAuctionLotEditFormHandler(auctionLot *types.AuctionLot) *utils.TemplateHandler {
+func NewAuctionLotEditFormHandler(auctionLot *types.AuctionLot, categories []types.Category) *utils.TemplateHandler {
 	return &utils.TemplateHandler{
-		Template: editAuctionLotForm(auctionLot, nil),
+		Template: editAuctionLotForm(auctionLot, nil, categories),
 	}
 }
 
-func NewAuctionLotEditFormErrorBadRequestHandler(auctionLot *types.AuctionLot, errors map[string]string) *utils.TemplateHandler {
+func NewAuctionLotEditFormErrorBadRequestHandler(auctionLot *types.AuctionLot, errors map[string]string, categories []types.Category) *utils.TemplateHandler {
 	if errors == nil {
 		errors = make(map[string]string)
 	}
 	return &utils.TemplateHandler{
-		Template: editAuctionLotForm(auctionLot, errors),
+		Template: editAuctionLotForm(auctionLot, errors, categories),
 	}
 }
 
@@ -51,7 +53,7 @@ func (a *AuctionLotEditPageHandler) newAuctionLotEditPage(ctx context.Context) t
 	}
 
 	if hxBoosted {
-		return auctionLotEditPage(a.auctionLot)
+		return auctionLotEditPage(a.auctionLot, a.categories)
 	}
 
 	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
@@ -61,7 +63,7 @@ func (a *AuctionLotEditPageHandler) newAuctionLotEditPage(ctx context.Context) t
 
 	builder := NewHTMLPageBuilder(root)
 	builder.AppendComponent(mainHeader(isAuthorized))
-	builder.AppendComponent(auctionLotEditPage(a.auctionLot))
+	builder.AppendComponent(auctionLotEditPage(a.auctionLot, a.categories))
 	builder.AppendComponent(mainFooter())
 
 	return builder.Build()

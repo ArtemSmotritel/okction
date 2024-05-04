@@ -3,6 +3,7 @@ package validation
 import (
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
+	"strconv"
 )
 
 type AuctionLotUpdateValidator struct {
@@ -42,6 +43,14 @@ func (v *AuctionLotUpdateValidator) Validate() (bool, error) {
 		v.Errors["binPrice"] = "Bin Price must be a number"
 	} else {
 		v.Request.BinPrice = binPrice
+	}
+
+	if v.Request.CategoryIdStr == "" {
+		v.Errors["category"] = "Category is required"
+	} else if categoryId, err := strconv.ParseInt(v.Request.CategoryIdStr, 10, 64); err != nil {
+		v.Errors["category"] = "Category must have a valid value"
+	} else {
+		v.Request.CategoryId = categoryId
 	}
 
 	return len(v.Errors) == 0, nil

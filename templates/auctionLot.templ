@@ -55,7 +55,7 @@ templ auctionLotListItem(lot *types.AuctionLot) {
     </li>
 }
 
-templ auctionLotEditPage(auctionLot *types.AuctionLot) {
+templ auctionLotEditPage(auctionLot *types.AuctionLot, categories []types.Category) {
     @main() {
         <section class="grid">
             <section>
@@ -67,7 +67,7 @@ templ auctionLotEditPage(auctionLot *types.AuctionLot) {
             </section>
             <section>
                 <h2>Edit "{ auctionLot.Name }"</h2>
-                @editAuctionLotForm(auctionLot, nil)
+                @editAuctionLotForm(auctionLot, nil, categories)
             </section>
         </section>
     }
@@ -124,7 +124,7 @@ var lotBinPriceInput *form.Field = &form.Field{
     AriaDescribedBy: "binPrice-helper",
 }
 
-templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string) {
+templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string, categories []types.Category) {
     <form id="auction-lot-form" hx-boost="true" hx-target="this" hx-swap="outerHTML"
         hx-put={ utils.ConvertToTemplStringURL("auctions", auctionLot.AuctionID, "lots", auctionLot.ID) }
     >
@@ -144,6 +144,25 @@ templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string)
                 }
             }
         }
+        <label for="category-select">
+            { "Category" }
+            <select name="category" id="category-select" aria-label="Select this lot category..." required>
+                <option
+                if auctionLot.CategoryId == 0 {
+                    selected
+                }
+                disabled value="">
+                    Select this lot category...
+                </option>
+                for _, c := range categories {
+                    <option
+                    if auctionLot.CategoryId != 0 && auctionLot.CategoryId == c.ID {
+                        selected
+                    }
+                    value={ utils.IdToString(c.ID) }>{ c.Name }</option>
+                }
+            </select>
+        </label>
         @form.Label("Minimal Bid", lotMinimalBidInput.ID) {
             @form.Input(lotMinimalBidInput.WithErrors(errors).Attributes(auctionLot.MinimalBid))
             <small id={ lotMinimalBidInput.AriaDescribedBy }>

@@ -65,7 +65,13 @@ func (s *Server) handleEditAuctionLot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handler := templates.NewAuctionLotEditPageHandler(auctionLot)
+	categories, err := s.store.GetCategories()
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	handler := templates.NewAuctionLotEditPageHandler(auctionLot, categories)
 	handler.ServeHTTP(w, r)
 }
 
@@ -101,6 +107,12 @@ func (s *Server) handleUpdateAuctionLot(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	categories, err := s.store.GetCategories()
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
 	if !ok {
 		auctionLotWithBadInfo := &types.AuctionLot{
 			ID:           lotId,
@@ -114,7 +126,7 @@ func (s *Server) handleUpdateAuctionLot(w http.ResponseWriter, r *http.Request) 
 		}
 		// TODO: handle not 2xx status codes as intended
 		//w.WriteHeader(http.StatusBadRequest)
-		handler := templates.NewAuctionLotEditFormErrorBadRequestHandler(auctionLotWithBadInfo, validator.Errors)
+		handler := templates.NewAuctionLotEditFormErrorBadRequestHandler(auctionLotWithBadInfo, validator.Errors, categories)
 		handler.ServeHTTP(w, r)
 		return
 	}
@@ -126,7 +138,7 @@ func (s *Server) handleUpdateAuctionLot(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	handler := templates.NewAuctionLotEditFormHandler(auctionLot)
+	handler := templates.NewAuctionLotEditFormHandler(auctionLot, categories)
 	handler.ServeHTTP(w, r)
 }
 
