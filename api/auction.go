@@ -197,8 +197,9 @@ func (s *Server) handleUpdateAuction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handler := templates.NewEditAuctionPageHandler(updatedAuction, auctionLots)
+	w.Header().Set("HX-Replace-Url", fmt.Sprintf("/my-auctions/%s/edit", utils.IdToString(id)))
 	w.WriteHeader(http.StatusCreated)
+	handler := templates.NewEditAuctionPageHandler(updatedAuction, auctionLots)
 	handler.ServeHTTP(w, r)
 }
 

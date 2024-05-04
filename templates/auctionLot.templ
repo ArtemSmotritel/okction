@@ -23,6 +23,7 @@ templ auctionLotListItem(lot *types.AuctionLot) {
                         hx-get={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
                         hx-target="#main"
                         hx-swap="outerHTML"
+                        hx-push-url={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
                     } else {
                         disabled
                     }
