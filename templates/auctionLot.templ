@@ -34,11 +34,14 @@ templ auctionLotListItem(lot *types.AuctionLot) {
                         hx-post={ utils.ConvertToTemplStringURL("auctions", lot.AuctionID, "lots", lot.ID, "archive") }
                         hx-target="#auction-lots-section"
                         hx-swap="outerHTML"
+                        hx-confirm="confirm-archive-auction-lot-dialog"
                     } else {
                         hx-post={ utils.ConvertToTemplStringURL("auctions", lot.AuctionID, "lots", lot.ID, "reinstate") }
                         hx-target="#auction-lots-section"
                         hx-swap="outerHTML"
+                        hx-confirm="confirm-reinstate-auction-lot-dialog"
                     }
+                    data-confirm-trigger="true"
                     class="secondary">
                     if lot.IsActive {
                         Archive

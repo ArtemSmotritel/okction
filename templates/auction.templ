@@ -13,6 +13,64 @@ templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
             </section>
         </section>
     }
+    <dialog id="confirm-archive-auction-lot-dialog">
+        <article>
+            <header>
+                <button
+                aria-label="Close"
+                rel="prev"
+                value="cancel"
+                onclick="toggleModal(event)"
+                ></button>
+                <h3>Confirm your action!</h3>
+            </header>
+            <p>
+                Do you really want to archive this auction lot?
+            </p>
+            <footer>
+                <button
+                role="button"
+                class="secondary"
+                onclick="toggleModal(event)"
+                value="cancel"
+                >
+                    Cancel
+                </button>
+                <button value="confirm" autofocus onclick="toggleModal(event)">
+                    Confirm
+                </button>
+            </footer>
+        </article>
+    </dialog>
+    <dialog id="confirm-reinstate-auction-lot-dialog">
+        <article>
+            <header>
+                <button
+                aria-label="Close"
+                rel="prev"
+                value="cancel"
+                onclick="toggleModal(event)"
+                ></button>
+                <h3>Confirm your action!</h3>
+            </header>
+            <p>
+                Do you really want to reinstate this auction lot?
+            </p>
+            <footer>
+                <button
+                role="button"
+                class="secondary"
+                onclick="toggleModal(event)"
+                value="cancel"
+                >
+                    Cancel
+                </button>
+                <button value="confirm" autofocus onclick="toggleModal(event)">
+                    Confirm
+                </button>
+            </footer>
+        </article>
+    </dialog>
 }
 
 templ auctionLotsList(auction *types.Auction, auctionLots []types.AuctionLot) {
