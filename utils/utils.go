@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/a-h/templ"
+	"github.com/shopspring/decimal"
 	"net/http"
 	"strconv"
 )
@@ -57,4 +58,13 @@ func (h *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func IdToString(id int64) string {
 	return strconv.FormatInt(id, 10)
+}
+
+// StringToDecimal converts a string input into the decimal.Decimal{} type, with decimal.Zero being the default value for an empty string
+func StringToDecimal(input string) (decimal.Decimal, error) {
+	if input == "" {
+		return decimal.Zero, nil
+	}
+
+	return decimal.NewFromString(input)
 }

@@ -23,6 +23,7 @@ type Storage interface {
 	SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error)
 	GetAuctionLotCount(auctionId int64) (int, error)
 	GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error)
+	UpdateAuctionLot(auctionLotId int64, lot *types.AuctionLotUpdateRequest) (*types.AuctionLot, error)
 
 	GetCategories() ([]types.Category, error)
 

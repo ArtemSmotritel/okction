@@ -2,7 +2,8 @@ package types
 
 import (
 	"database/sql"
-	decimal "github.com/jackc/pgx-shopspring-decimal"
+	"github.com/shopspring/decimal"
+	"net/url"
 	"time"
 )
 
@@ -26,4 +27,29 @@ func CopyAuctionLot(auctionLot *AuctionLot) *AuctionLot {
 		AuctionID: auctionLot.AuctionID,
 		Name:      auctionLot.Name,
 	}
+}
+
+type AuctionLotUpdateRequest struct {
+	ID              int64
+	AuctionID       int64
+	Name            string
+	Description     string
+	MinimalBid      decimal.Decimal
+	ReservePrice    decimal.Decimal
+	BinPrice        decimal.Decimal
+	MinimalBidStr   string
+	ReservePriceStr string
+	BinPriceStr     string
+}
+
+func NewAuctionLotUpdateRequest(values url.Values, lotId, auctionId int64) (*AuctionLotUpdateRequest, error) {
+	return &AuctionLotUpdateRequest{
+		ID:              lotId,
+		AuctionID:       auctionId,
+		Name:            values.Get("name"),
+		Description:     values.Get("description"),
+		MinimalBidStr:   values.Get("minimalBid"),
+		ReservePriceStr: values.Get("reservePrice"),
+		BinPriceStr:     values.Get("binPrice"),
+	}, nil
 }

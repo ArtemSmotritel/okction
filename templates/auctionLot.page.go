@@ -8,23 +8,10 @@ import (
 	"net/http"
 )
 
-type AuctionLotListItemHandler struct {
-	auctionLot *types.AuctionLot
-}
-
-func NewAuctionLotListItemHandler(auctionLot *types.AuctionLot) *AuctionLotListItemHandler {
-	return &AuctionLotListItemHandler{
-		auctionLot: auctionLot,
+func NewAuctionLotListItemHandler(auctionLot *types.AuctionLot) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: auctionLotListItem(auctionLot),
 	}
-}
-
-func (a *AuctionLotListItemHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler := templ.Handler(a.newAuctionLotListItem())
-	handler.ServeHTTP(w, r)
-}
-
-func (a *AuctionLotListItemHandler) newAuctionLotListItem() templ.Component {
-	return auctionLotListItem(a.auctionLot)
 }
 
 type AuctionLotEditPageHandler struct {
@@ -34,6 +21,21 @@ type AuctionLotEditPageHandler struct {
 func NewAuctionLotEditPageHandler(auctionLot *types.AuctionLot) *AuctionLotEditPageHandler {
 	return &AuctionLotEditPageHandler{
 		auctionLot: auctionLot,
+	}
+}
+
+func NewAuctionLotEditFormHandler(auctionLot *types.AuctionLot) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: editAuctionLotForm(auctionLot, nil),
+	}
+}
+
+func NewAuctionLotEditFormErrorBadRequestHandler(auctionLot *types.AuctionLot, errors map[string]string) *utils.TemplateHandler {
+	if errors == nil {
+		errors = make(map[string]string)
+	}
+	return &utils.TemplateHandler{
+		Template: editAuctionLotForm(auctionLot, errors),
 	}
 }
 

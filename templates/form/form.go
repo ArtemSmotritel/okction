@@ -1,8 +1,13 @@
 package form
 
-import "github.com/a-h/templ"
+import (
+	"github.com/a-h/templ"
+	"github.com/shopspring/decimal"
+)
 
 type fieldAutocomplete string
+
+const DecimalPrecision = 2
 
 const (
 	EmailAutocomplete       fieldAutocomplete = "email"
@@ -21,6 +26,7 @@ const (
 	ButtonInputType   fieldInputType = "button"
 	EmailInputType    fieldInputType = "email"
 	PhoneInputType    fieldInputType = "tel"
+	NumberInputType   fieldInputType = "number"
 )
 
 type Field struct {
@@ -34,6 +40,9 @@ type Field struct {
 	AriaDescribedBy string
 	Value           any
 	Disabled        bool
+	Min             string
+	Max             string
+	Step            string
 }
 
 func (f *Field) Attributes(value any) templ.Attributes {
@@ -87,6 +96,18 @@ func formFieldToTemplAttr(field *Field, value any) templ.Attributes {
 		attr["aria-describedby"] = field.AriaDescribedBy
 	}
 
+	if field.Min != "" {
+		attr["min"] = field.Min
+	}
+
+	if field.Max != "" {
+		attr["max"] = field.Max
+	}
+
+	if field.Step != "" {
+		attr["step"] = field.Step
+	}
+
 	switch field.Value.(type) {
 	case string:
 		if field.Value != "" {
@@ -94,8 +115,10 @@ func formFieldToTemplAttr(field *Field, value any) templ.Attributes {
 		}
 	case bool:
 		attr["value"] = field.Value
+	case decimal.Decimal:
+		val, _ := field.Value.(decimal.Decimal)
+		attr["value"] = val.StringFixedBank(DecimalPrecision)
 	default:
-		// TODO log this case
 	}
 
 	if value != nil {
@@ -106,8 +129,10 @@ func formFieldToTemplAttr(field *Field, value any) templ.Attributes {
 			}
 		case bool:
 			attr["value"] = value
+		case decimal.Decimal:
+			val, _ := value.(decimal.Decimal)
+			attr["value"] = val.StringFixedBank(DecimalPrecision)
 		default:
-			// TODO log this case
 		}
 	}
 

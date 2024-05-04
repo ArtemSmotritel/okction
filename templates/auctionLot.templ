@@ -23,7 +23,7 @@ templ auctionLotListItem(auctionLot *types.AuctionLot) {
                         ::
                     </summary>
                     <ul dir="rtl">
-                        <li><a href="">Edit</a></li>
+                        <li><a href={ utils.ConvertToTemplURL("my-auctions", auctionLot.AuctionID, "lots", auctionLot.ID, "edit") } >Edit</a></li>
                         <li><a href="">Delete</a></li>
                     </ul>
                 </details>
@@ -44,7 +44,7 @@ templ auctionLotEditPage(auctionLot *types.AuctionLot) {
             </section>
             <section>
                 <h2>Edit "{ auctionLot.Name }"</h2>
-                @editAuctionLotForm(auctionLot)
+                @editAuctionLotForm(auctionLot, nil)
             </section>
         </section>
     }
@@ -54,27 +54,117 @@ var lotNameInput *form.Field = &form.Field{
 	Name:            "name",
 	Required:        true,
 	ID:              "name-input",
-	Type:            form.Text,
+	Type:            form.TextInputType,
 	Placeholder:     "Lot name...",
-	Autocomplete: form.Off,
+	Autocomplete: form.OffAutocomplete,
 }
 
 var lotDescriptionInput *form.Field = &form.Field{
 	Name:            "description",
 	Required:        true,
 	ID:              "description-input",
-	Type:            form.TextArea,
+	Type:            form.TextAreaInputType,
 	Placeholder:     "Lot description...",
-	Autocomplete: form.Off,
+	Autocomplete: form.OffAutocomplete,
 }
 
-templ editAuctionLotForm(auctionLot *types.AuctionLot) {
-    <form>
+var lotMinimalBidInput *form.Field = &form.Field{
+    Name:            "minimalBid",
+    ID:              "minimal-bid-input",
+    Type:            form.NumberInputType,
+    Placeholder:     "Lot minimal bid...",
+    Autocomplete: form.OffAutocomplete,
+    Min: "0",
+    Step: "0.01",
+    AriaDescribedBy: "minimalBid-helper",
+}
+
+var lotReservePriceInput *form.Field = &form.Field{
+    Name:            "reservePrice",
+    ID:              "reserve-price-input",
+    Type:            form.NumberInputType,
+    Placeholder:     "Lot reserve price...",
+    Autocomplete: form.OffAutocomplete,
+    Min: "0",
+    Step: "0.01",
+    AriaDescribedBy: "reservePrice-helper",
+}
+
+var lotBinPriceInput *form.Field = &form.Field{
+    Name:            "binPrice",
+    ID:              "bin-price-input",
+    Type:            form.NumberInputType,
+    Placeholder:     "Lot Buy It Now price...",
+    Autocomplete: form.OffAutocomplete,
+    Min: "0",
+    Step: "0.01",
+    AriaDescribedBy: "binPrice-helper",
+}
+
+templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string) {
+    <form id="auction-lot-form" hx-boost="true" hx-target="this" hx-swap="outerHTML"
+        hx-put={ utils.ConvertToTemplStringURL("auctions", auctionLot.AuctionID, "lots", auctionLot.ID) }
+    >
         @form.Label("Name", lotNameInput.ID) {
-            @form.Input(lotNameInput.Attributes(auctionLot.Name))
+            @form.Input(lotNameInput.WithErrors(errors).Attributes(auctionLot.Name))
+            if errors != nil {
+                if err, ok := errors[lotNameInput.Name]; ok {
+                    <small id={ lotNameInput.AriaDescribedBy }>{ err }</small>
+                }
+            }
         }
         @form.Label("Description", lotDescriptionInput.ID) {
-            @form.Input(lotDescriptionInput.Attributes(auctionLot.Description))
+            @form.Input(lotDescriptionInput.WithErrors(errors).Attributes(auctionLot.Description))
+            if errors != nil {
+                if err, ok := errors[lotDescriptionInput.Name]; ok {
+                    <small id={ lotDescriptionInput.AriaDescribedBy }>{ err }</small>
+                }
+            }
         }
+        @form.Label("Minimal Bid", lotMinimalBidInput.ID) {
+            @form.Input(lotMinimalBidInput.WithErrors(errors).Attributes(auctionLot.MinimalBid))
+            <small id={ lotMinimalBidInput.AriaDescribedBy }>
+                if errors != nil {
+                    if err, ok := errors[lotMinimalBidInput.Name]; ok {
+                        { err }
+                    } else {
+                        { "Set 0 to disable" }
+                    }
+                } else {
+                    { "Set 0 to disable" }
+                }
+            </small>
+        }
+        @form.Label("Reserve Price", lotReservePriceInput.ID) {
+            @form.Input(lotReservePriceInput.WithErrors(errors).Attributes(auctionLot.ReservePrice))
+            <small id={ lotReservePriceInput.AriaDescribedBy }>
+            { "Set 0 to disable" }
+            if errors != nil {
+                if err, ok := errors[lotReservePriceInput.Name]; ok {
+                    { "\n" + err }
+                } else {
+                    { "Set 0 to disable" }
+                }
+            } else {
+                { "Set 0 to disable" }
+            }
+            </small>
+        }
+        @form.Label("Bin Price", lotBinPriceInput.ID) {
+            @form.Input(lotBinPriceInput.WithErrors(errors).Attributes(auctionLot.BinPrice))
+            <small id={ lotBinPriceInput.AriaDescribedBy }>
+            { "Set 0 to disable" }
+            if errors != nil {
+                if err, ok := errors[lotBinPriceInput.Name]; ok {
+                    { "\n" + err }
+                } else {
+                    { "Set 0 to disable" }
+                }
+            } else {
+                { "Set 0 to disable" }
+            }
+            </small>
+        }
+        <input type="submit" value="Save changes" />
     </form>
 }

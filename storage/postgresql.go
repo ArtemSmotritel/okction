@@ -276,6 +276,7 @@ func (p *PostgresqlStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionL
 	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id FROM auction_lot WHERE id = $1"
 
 	var lot types.AuctionLot
+	lot.ID = auctionLotId
 
 	err := p.connection.QueryRow(context.Background(), query, auctionLotId).Scan(&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID)
 	if err != nil {
@@ -346,4 +347,29 @@ func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error 
 	}
 
 	return nil
+}
+
+func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.AuctionLotUpdateRequest) (*types.AuctionLot, error) {
+	p.logger.Printf("req: %+v\n", request)
+	query := "UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at"
+	args := pgx.NamedArgs{
+		"id":            auctionLotId,
+		"name":          request.Name,
+		"description":   request.Description,
+		"minimal_bid":   request.MinimalBid,
+		"reserve_price": request.ReservePrice,
+		"bin_price":     request.BinPrice,
+		"updated_at":    time.Now(),
+	}
+
+	var lot types.AuctionLot
+	lot.ID = auctionLotId
+
+	returningArgs := []any{&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt}
+
+	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
+		return nil, err
+	}
+
+	return &lot, nil
 }
