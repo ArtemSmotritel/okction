@@ -21,6 +21,10 @@ func NewPostgresqlStore(conn *pgx.Conn, logger *log.Logger) *PostgresqlStore {
 	}
 }
 
+func (p *PostgresqlStore) logError(err error, tag string) {
+	p.logger.Printf("An error occurred when executing a query to the postgres db\nTAG: %s\nERROR: %+v\n", tag, err)
+}
+
 func (p *PostgresqlStore) GetUserByID(id int64) (*types.User, error) {
 	var user types.User
 
@@ -28,7 +32,7 @@ func (p *PostgresqlStore) GetUserByID(id int64) (*types.User, error) {
 	err := p.connection.QueryRow(context.Background(), query, id).Scan(&user.ID, &user.Email, &user.Phone, &user.FullName, &user.Password)
 	if err != nil {
 		// TODO: think of a normal way to log an error
-		p.logger.Printf("ERROR: %s", err.Error())
+		p.logError(err, "get user by id")
 		return nil, err
 	}
 
@@ -38,6 +42,7 @@ func (p *PostgresqlStore) GetUserByID(id int64) (*types.User, error) {
 func (p *PostgresqlStore) GetUsers() ([]types.User, error) {
 	rows, err := p.connection.Query(context.Background(), "SELECT * FROM users")
 	if err != nil {
+		p.logError(err, "get users")
 		return nil, err
 	}
 	defer rows.Close()
@@ -48,11 +53,13 @@ func (p *PostgresqlStore) GetUsers() ([]types.User, error) {
 		var user types.User
 		err := rows.Scan(&user.ID, &user.Email, &user.FullName, &user.Phone)
 		if err != nil {
+			p.logError(err, "get users; rows")
 			return nil, err
 		}
 		users = append(users, user)
 	}
 	if err = rows.Err(); err != nil {
+		p.logError(err, "get users; after rows")
 		return nil, err
 	}
 
@@ -64,6 +71,7 @@ func (p *PostgresqlStore) SaveUser(user *types.User) error {
 	args := []any{user.Email, user.FullName, user.Phone, user.Password}
 	_, err := p.connection.Exec(context.Background(), query, args...)
 	if err != nil {
+		p.logError(err, "save user")
 		return err
 	}
 
@@ -81,6 +89,7 @@ func (p *PostgresqlStore) UpdateUser(id int64, request types.UserUpdateRequest) 
 
 	err := p.connection.QueryRow(context.Background(), query, args...).Scan(&user.FullName, &user.Email, &user.Phone, &user.Password)
 	if err != nil {
+		p.logError(err, "update user")
 		return nil, err
 	}
 
@@ -91,6 +100,7 @@ func (p *PostgresqlStore) DeleteUser(id int64) error {
 	query := "DELETE FROM users WHERE id = $1"
 	_, err := p.connection.Exec(context.Background(), query, id)
 	if err != nil {
+		p.logError(err, "delete user")
 		return err
 	}
 
@@ -103,6 +113,7 @@ func (p *PostgresqlStore) GetUserByEmail(email string) (*types.User, error) {
 	query := "SELECT id, email, phone, fullname, password FROM users where email = $1"
 	err := p.connection.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.Email, &user.Phone, &user.FullName, &user.Password)
 	if err != nil {
+		p.logError(err, "get user by email")
 		return nil, err
 	}
 
@@ -114,6 +125,7 @@ func (p *PostgresqlStore) GetAuctionsByOwnerId(ownerId int64) ([]types.Auction, 
 
 	rows, err := p.connection.Query(context.Background(), query, ownerId)
 	if err != nil {
+		p.logError(err, "get auctions by owner id")
 		return nil, err
 	}
 	defer rows.Close()
@@ -123,6 +135,7 @@ func (p *PostgresqlStore) GetAuctionsByOwnerId(ownerId int64) ([]types.Auction, 
 		var auction types.Auction
 		err := rows.Scan(&auction.ID, &auction.Name, &auction.Description, &auction.IsActive, &auction.IsPrivate, &auction.CreatedAt, &auction.UpdatedAt, &auction.DeletedAt, &auction.OwnerId)
 		if err != nil {
+			p.logError(err, "get auctions by owner id; rows")
 			return nil, err
 		}
 
@@ -130,6 +143,7 @@ func (p *PostgresqlStore) GetAuctionsByOwnerId(ownerId int64) ([]types.Auction, 
 	}
 
 	if err = rows.Err(); err != nil {
+		p.logError(err, "get auctions by owner id; after rows")
 		return nil, err
 	}
 
@@ -141,6 +155,7 @@ func (p *PostgresqlStore) GetOwnerIDByAuctionID(auctionId int64) (int64, error) 
 	var ownerId int64
 	err := p.connection.QueryRow(context.Background(), query, auctionId).Scan(&ownerId)
 	if err != nil {
+		p.logError(err, "get auction owner id by auction id")
 		return 0, err
 	}
 
@@ -153,6 +168,7 @@ func (p *PostgresqlStore) GetAuctionByID(id int64) (*types.Auction, error) {
 
 	err := p.connection.QueryRow(context.Background(), query, id).Scan(&auction.ID, &auction.Name, &auction.Description, &auction.IsActive, &auction.IsPrivate, &auction.CreatedAt, &auction.UpdatedAt, &auction.DeletedAt, &auction.OwnerId)
 	if err != nil {
+		p.logError(err, "get auction by id")
 		return nil, err
 	}
 
@@ -173,6 +189,7 @@ func (p *PostgresqlStore) SaveAuction(auction *types.Auction) (*types.Auction, e
 
 	err := p.connection.QueryRow(context.Background(), query, args...).Scan(&id, &createdAt)
 	if err != nil {
+		p.logError(err, "save auction")
 		return nil, err
 	}
 
@@ -193,6 +210,7 @@ func (p *PostgresqlStore) DeleteAuction(id int64) error {
 	query := "DELETE FROM auction WHERE id = $1"
 	_, err := p.connection.Exec(context.Background(), query, id)
 	if err != nil {
+		p.logError(err, "delete auction")
 		return err
 	}
 
@@ -203,6 +221,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0) FROM auction_lot WHERE auction_id = $1"
 	rows, err := p.connection.Query(context.Background(), query, auctionId)
 	if err != nil {
+		p.logError(err, "get auction lots by auction id")
 		return nil, err
 	}
 	defer rows.Close()
@@ -212,6 +231,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 		var lot types.AuctionLot
 
 		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId); err != nil {
+			p.logError(err, "get auction lots by auction id; rows")
 			return nil, err
 		}
 
@@ -219,6 +239,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 	}
 
 	if err = rows.Err(); err != nil {
+		p.logError(err, "get auction lots by auction id; after rows")
 		return nil, err
 	}
 
@@ -244,6 +265,7 @@ func (p *PostgresqlStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.A
 
 	err := p.connection.QueryRow(context.Background(), query, args).Scan(&id, &createdAt)
 	if err != nil {
+		p.logError(err, "save auction lot")
 		return nil, err
 	}
 
@@ -266,6 +288,7 @@ func (p *PostgresqlStore) GetAuctionLotCount(auctionId int64) (int, error) {
 	var count int
 	err := p.connection.QueryRow(context.Background(), query, auctionId).Scan(&count)
 	if err != nil {
+		p.logError(err, "get auction lot count")
 		return 0, err
 	}
 
@@ -282,6 +305,7 @@ func (p *PostgresqlStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionL
 
 	err := p.connection.QueryRow(context.Background(), query, auctionLotId).Scan(returningArgs...)
 	if err != nil {
+		p.logError(err, "get auction lot by id")
 		return nil, err
 	}
 
@@ -293,6 +317,7 @@ func (p *PostgresqlStore) GetCategories() ([]types.Category, error) {
 
 	rows, err := p.connection.Query(context.Background(), query)
 	if err != nil {
+		p.logError(err, "get categories")
 		return nil, err
 	}
 	defer rows.Close()
@@ -303,6 +328,7 @@ func (p *PostgresqlStore) GetCategories() ([]types.Category, error) {
 		var category types.Category
 
 		if err = rows.Scan(&category.ID, &category.Name); err != nil {
+			p.logError(err, "get categories; rows")
 			return nil, err
 		}
 
@@ -310,6 +336,7 @@ func (p *PostgresqlStore) GetCategories() ([]types.Category, error) {
 	}
 
 	if err = rows.Err(); err != nil {
+		p.logError(err, "get categories; after rows")
 		return nil, err
 	}
 
@@ -336,6 +363,7 @@ func (p *PostgresqlStore) UpdateAuction(update types.AuctionUpdateRequest) (*typ
 	returningArgs := []any{&auction.Name, &auction.Description, &auction.IsPrivate, &auction.IsActive, &auction.UpdatedAt, &auction.CreatedAt, &auction.DeletedAt, &auction.OwnerId}
 
 	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
+		p.logError(err, "update auction")
 		return nil, err
 	}
 
@@ -345,6 +373,7 @@ func (p *PostgresqlStore) UpdateAuction(update types.AuctionUpdateRequest) (*typ
 func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error {
 	query := "UPDATE auction SET is_active = $1 WHERE id = $2"
 	if _, err := p.connection.Exec(context.Background(), query, isActive, id); err != nil {
+		p.logError(err, "set auction active status")
 		return err
 	}
 
@@ -374,7 +403,7 @@ func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.Au
 	returningArgs := []any{&lot.CategoryId, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt}
 
 	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
-		p.logger.Printf("Couldn't perform an update, %+v\n", err)
+		p.logError(err, "update auction lot")
 		return nil, err
 	}
 
@@ -385,6 +414,7 @@ func (p *PostgresqlStore) SetAuctionLotActiveStatus(auctionLotId int64, isActive
 	query := "UPDATE auction_lot SET is_active = $1 WHERE id = $2"
 
 	if _, err := p.connection.Exec(context.Background(), query, isActive, auctionLotId); err != nil {
+		p.logError(err, "set auction lot active status")
 		return err
 	}
 

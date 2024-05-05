@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/validation"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 )
@@ -61,6 +63,10 @@ func (s *Server) handleEditAuctionLot(w http.ResponseWriter, r *http.Request) {
 
 	auctionLot, err := s.store.GetAuctionLotByID(lotId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			s.handleNotFound(w, r)
+			return
+		}
 		s.internalError(w, r)
 		return
 	}
