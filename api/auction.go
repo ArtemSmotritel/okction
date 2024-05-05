@@ -180,8 +180,18 @@ func (s *Server) handleUpdateAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !ok {
-		// TODO handle bad request
-		s.badRequestError(w, r, "Invalid update request")
+		auctionWithBadData := types.Auction{
+			ID:          id,
+			Name:        updateRequest.Name,
+			Description: updateRequest.Description,
+			IsActive:    true,
+			IsPrivate:   updateRequest.IsPrivate,
+		}
+		w.Header().Set("HX-Retarget", "#create-auction-form-1")
+		w.Header().Set("HX-Reswap", "outerHTML")
+		w.Header().Set("HX-Replace-Url", fmt.Sprintf("/my-auctions/%s/edit", utils.IdToString(id)))
+		handler := templates.NewAuctionEditFormErrorBadRequestHandler(&auctionWithBadData, validator.Errors)
+		handler.ServeHTTP(w, r)
 		return
 	}
 

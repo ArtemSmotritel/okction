@@ -60,7 +60,7 @@ func newEditAuctionPage(ctx context.Context, handler *EditAuctionPageHandler) te
 	}
 
 	if hxBoosted {
-		return editAuctionPage(handler.auctionLots, handler.auction)
+		return editAuctionPage(handler.auctionLots, handler.auction, nil)
 	}
 
 	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
@@ -71,7 +71,7 @@ func newEditAuctionPage(ctx context.Context, handler *EditAuctionPageHandler) te
 
 	builder := NewHTMLPageBuilder(root)
 	builder.AppendComponent(mainHeader(isAuthorized))
-	builder.AppendComponent(editAuctionPage(handler.auctionLots, handler.auction))
+	builder.AppendComponent(editAuctionPage(handler.auctionLots, handler.auction, nil))
 	builder.AppendComponent(mainFooter())
 
 	return builder.Build()
@@ -128,5 +128,11 @@ func newMyAuctionsPage(ctx context.Context, handler *MyAuctionsPageHandler) temp
 func NewAuctionLotsListHandler(auctionLots []types.AuctionLot, auction *types.Auction) *utils.TemplateHandler {
 	return &utils.TemplateHandler{
 		Template: auctionLotsList(auction, auctionLots),
+	}
+}
+
+func NewAuctionEditFormErrorBadRequestHandler(auction *types.Auction, errors map[string]string) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: createAuctionForm(false, auction, errors),
 	}
 }

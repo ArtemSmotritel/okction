@@ -352,9 +352,9 @@ func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error 
 }
 
 func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.AuctionLotUpdateRequest) (*types.AuctionLot, error) {
-	updateLotCategorySubQuery := "WITH categoty_subquery AS (INSERT INTO auction_lot_categories (auction_lot_id, category_id) VALUES (@id, @category_id) ON CONFLICT (auction_lot_id) DO UPDATE SET category_id = @category_id RETURNING category_id), "
+	updateLotCategorySubQuery := "WITH category_subquery AS (INSERT INTO auction_lot_categories (auction_lot_id, category_id) VALUES (@id, @category_id) ON CONFLICT (auction_lot_id) DO UPDATE SET category_id = @category_id RETURNING category_id), "
 	updateLotQuery := "lot_subquery AS (UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at) "
-	selectQuery := "SELECT * FROM categoty_subquery, lot_subquery"
+	selectQuery := "SELECT * FROM category_subquery, lot_subquery"
 
 	query := updateLotCategorySubQuery + updateLotQuery + selectQuery
 	args := pgx.NamedArgs{

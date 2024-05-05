@@ -2,14 +2,15 @@ package templates
 
 import "github.com/artemsmotritel/oktion/types"
 import "github.com/artemsmotritel/oktion/utils"
+import "github.com/artemsmotritel/oktion/templates/form"
 
-templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction) {
+templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction, errors map[string]string) {
     @main() {
         <section class="grid">
             @auctionLotsList(auction, auctionLots)
             <section>
                 <h2>Edit your auction</h2>
-                @createAuctionForm(false, auction)
+                @createAuctionForm(false, auction, errors)
             </section>
         </section>
     }
@@ -101,7 +102,25 @@ templ auctionLotsList(auction *types.Auction, auctionLots []types.AuctionLot) {
     </section>
 }
 
-templ createAuctionForm(isNew bool, auction *types.Auction) {
+var auctionNameInput *form.Field = &form.Field{
+	Name:            "name",
+	Required:        true,
+	ID:              "name-input",
+	Type:            form.TextInputType,
+	Placeholder:     "Auction name...",
+	Autocomplete: form.OffAutocomplete,
+}
+
+var auctionDescriptionInput *form.Field = &form.Field{
+	Name:            "description",
+	Required:        true,
+	ID:              "description-input",
+	Type:            form.TextAreaInputType,
+	Placeholder:     "Auction description...",
+	Autocomplete: form.OffAutocomplete,
+}
+
+templ createAuctionForm(isNew bool, auction *types.Auction, errors map[string]string) {
     <form id="create-auction-form-1" hx-boost="true" hx-target="#main" hx-swap="outerHTML"
             if isNew {
                 method="post" action="/auctions"
@@ -109,22 +128,22 @@ templ createAuctionForm(isNew bool, auction *types.Auction) {
                 method="put" action={ utils.ConvertToTemplURL("auctions", auction.ID) }
             }
     >
-        <label for="name-input">
-            Name it
-            <input
-            if !isNew {
-                value={auction.Name}
-             }
-            required type="text" autocomplete="off" name="name" id="name-input" placeholder="Awesome auction..."/>
-        </label>
-        <label for="description-input">
-            Describe it
-            <textarea required name="description" autocomplete="off" id="description-input" placeholder="Superb description...">
-                if !isNew {
-                    { auction.Description }
-                 }
-            </textarea>
-        </label>
+        @form.Label("Name", auctionNameInput.ID) {
+            @form.Input(auctionNameInput.WithErrors(errors).Attributes(auction.Name))
+            if errors != nil {
+                if err, ok := errors[auctionNameInput.Name]; ok {
+                    <small id={ auctionNameInput.AriaDescribedBy }>{ err }</small>
+                }
+            }
+        }
+        @form.Label("Description", auctionDescriptionInput.ID) {
+            @form.Input(auctionDescriptionInput.WithErrors(errors).Attributes(auction.Description))
+            if errors != nil {
+                if err, ok := errors[auctionDescriptionInput.Name]; ok {
+                    <small id={ auctionDescriptionInput.AriaDescribedBy }>{ err }</small>
+                }
+            }
+        }
         <label for="private-input">
             <input
             if !isNew {
@@ -144,7 +163,7 @@ templ createAuctionForm(isNew bool, auction *types.Auction) {
 templ createAuctionPage() {
     @main() {
         <h2>Create your auction</h2>
-        @createAuctionForm(true, nil)
+        @createAuctionForm(true, nil, nil)
     }
 }
 
