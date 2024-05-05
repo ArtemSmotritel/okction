@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/jackc/pgx/v5"
 	"log"
@@ -66,16 +67,19 @@ func (p *PostgresqlStore) GetUsers() ([]types.User, error) {
 	return users, nil
 }
 
-func (p *PostgresqlStore) SaveUser(user *types.User) error {
-	query := "INSERT INTO users (email, fullname, phone, password) VALUES ($1, $2, $3, $4)"
+func (p *PostgresqlStore) SaveUser(user *types.User) (*types.User, error) {
+	query := "INSERT INTO users (email, fullname, phone, password) VALUES ($1, $2, $3, $4) RETURNING id, email, fullname, phone"
 	args := []any{user.Email, user.FullName, user.Phone, user.Password}
-	_, err := p.connection.Exec(context.Background(), query, args...)
+
+	var savedUser types.User
+	returningArgs := []any{&savedUser.ID, &savedUser.Email, &savedUser.FullName, &savedUser.Phone}
+	err := p.connection.QueryRow(context.Background(), query, args...).Scan(returningArgs...)
 	if err != nil {
 		p.logError(err, "save user")
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &savedUser, nil
 }
 
 // UpdateUser DOES NOT update the user password or email
@@ -113,6 +117,9 @@ func (p *PostgresqlStore) GetUserByEmail(email string) (*types.User, error) {
 	query := "SELECT id, email, phone, fullname, password FROM users where email = $1"
 	err := p.connection.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.Email, &user.Phone, &user.FullName, &user.Password)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		p.logError(err, "get user by email")
 		return nil, err
 	}

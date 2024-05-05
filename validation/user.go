@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/alexedwards/argon2id"
 	"github.com/artemsmotritel/oktion/types"
+	"github.com/jackc/pgx/v5"
 	"net/mail"
 	"net/url"
 	"strings"
@@ -51,7 +52,7 @@ func (u *LoginValidator) Validate(values url.Values, identityProvider UserIdenti
 		u.Errors["email"] = message
 	} else {
 		user, err = identityProvider.GetUserByEmail(u.Email)
-		if err != nil {
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return false, err
 		}
 	}
@@ -126,12 +127,8 @@ func (u *SignUpValidator) Validate(values url.Values, identityProvider UserIdent
 	return len(u.Errors) == 0, nil
 }
 
-var userId int64
-
 func MapUserCreateRequestToUser(request *SignUpValidator) *types.User {
-	userId++
 	return &types.User{
-		ID:       userId,
 		FullName: request.FullName,
 		Email:    request.Email,
 		Password: request.Password,

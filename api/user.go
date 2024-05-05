@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/alexedwards/argon2id"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/validation"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 )
@@ -18,9 +20,10 @@ func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO refactor validation, user creation to the example of auction lot
 	signUpValidator := validation.NewSignUpValidator()
 	ok, err := signUpValidator.Validate(r.Form, s.store)
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		s.internalError(w, r)
 		return
 	}
@@ -43,7 +46,7 @@ func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = hash
 
-	err = s.store.SaveUser(user)
+	savedUser, err := s.store.SaveUser(user)
 	if err != nil {
 		s.internalError(w, r)
 		return
@@ -51,7 +54,7 @@ func (s *Server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	cookie := http.Cookie{
 		Name:     "userId",
-		Value:    strconv.FormatInt(user.ID, 10),
+		Value:    strconv.FormatInt(savedUser.ID, 10),
 		Path:     "/",
 		MaxAge:   3600,
 		HttpOnly: true,
