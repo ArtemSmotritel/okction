@@ -19,14 +19,10 @@ templ auctionLotListItem(lot *types.AuctionLot) {
                     View
                 </button>
                 <button
-                    if lot.IsActive {
-                        hx-get={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
-                        hx-target="#main"
-                        hx-swap="outerHTML"
-                        hx-push-url={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
-                    } else {
-                        disabled
-                    }
+                    hx-get={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
+                    hx-target="#main"
+                    hx-swap="outerHTML"
+                    hx-push-url={ utils.ConvertToTemplStringURL("my-auctions", lot.AuctionID, "lots", lot.ID, "edit") }
                 >
                     Edit
                 </button>

@@ -200,7 +200,7 @@ func (p *PostgresqlStore) DeleteAuction(id int64) error {
 }
 
 func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.AuctionLot, error) {
-	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, (SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1) FROM auction_lot WHERE auction_id = $1"
+	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0) FROM auction_lot WHERE auction_id = $1"
 	rows, err := p.connection.Query(context.Background(), query, auctionId)
 	if err != nil {
 		return nil, err
@@ -273,7 +273,7 @@ func (p *PostgresqlStore) GetAuctionLotCount(auctionId int64) (int, error) {
 }
 
 func (p *PostgresqlStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
-	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, (SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1) FROM auction_lot WHERE id = $1"
+	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0) FROM auction_lot WHERE id = $1"
 
 	var lot types.AuctionLot
 	lot.ID = auctionLotId
