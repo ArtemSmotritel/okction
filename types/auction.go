@@ -117,3 +117,51 @@ func NewAuctionUpdateRequest(values url.Values, id int64) AuctionUpdateRequest {
 		ID:          id,
 	}
 }
+
+type AuctionFilter struct {
+	CategoryId int64
+	Name       string
+	PerPage    int
+	Page       int
+	SortBy     string
+}
+
+type AuctionFilterBuilder struct {
+	filter AuctionFilter
+}
+
+func NewAuctionFilterBuilder() *AuctionFilterBuilder {
+	return &AuctionFilterBuilder{}
+}
+
+func (b *AuctionFilterBuilder) WithCategoryId(id int64) *AuctionFilterBuilder {
+	b.filter.CategoryId = id
+	return b
+}
+
+func (b *AuctionFilterBuilder) WithName(name string) *AuctionFilterBuilder {
+	b.filter.Name = name
+	return b
+}
+
+func (b *AuctionFilterBuilder) WithPerPage(perPage int) *AuctionFilterBuilder {
+	b.filter.PerPage = perPage
+	return b
+}
+
+func (b *AuctionFilterBuilder) WithPage(page int) *AuctionFilterBuilder {
+	b.filter.Page = page
+	return b
+}
+
+func (b *AuctionFilterBuilder) WithSortBy(field string) *AuctionFilterBuilder {
+	b.filter.SortBy = field
+	return b
+}
+
+func (b *AuctionFilterBuilder) Build() AuctionFilter {
+	if b.filter.SortBy == "" {
+		b.filter.SortBy = "id"
+	}
+	return b.filter
+}

@@ -14,6 +14,7 @@ type AuctionLot struct {
 	Description  string
 	CategoryId   int64
 	IsActive     bool
+	IsClosed     bool
 	MinimalBid   decimal.Decimal
 	ReservePrice decimal.Decimal
 	BinPrice     decimal.Decimal

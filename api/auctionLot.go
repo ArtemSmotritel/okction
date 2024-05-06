@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
+	"github.com/artemsmotritel/oktion/utils"
 	"github.com/artemsmotritel/oktion/validation"
 	"github.com/jackc/pgx/v5"
 	"net/http"
@@ -181,5 +182,35 @@ func (s *Server) handleSetAuctionLotActiveStatus(isActive bool) http.HandlerFunc
 
 		handler := templates.NewAuctionLotsListHandler(lots, auction)
 		handler.ServeHTTP(w, r)
+	}
+}
+
+func (s *Server) handleSetUserFavoriteAuctionLot(isFavorite bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("auctionId")))
+			return
+		}
+
+		lotId, err := strconv.ParseInt(r.PathValue("lotId"), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction lot id in path: %s", r.PathValue("lotId")))
+			return
+		}
+
+		userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+		if err != nil {
+			// TODO : make user there is userId in each protected request handler
+			s.badRequestError(w, r, "Not authorized")
+			return
+		}
+
+		if err = s.store.SetUserFavoriteAuctionLot(userId, lotId, isFavorite); err != nil {
+			s.internalError(w, r)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

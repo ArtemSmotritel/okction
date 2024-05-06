@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/artemsmotritel/oktion/types"
+	"github.com/artemsmotritel/oktion/utils"
 	"github.com/jackc/pgx/v5"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -182,10 +184,6 @@ func (p *PostgresqlStore) GetAuctionByID(id int64) (*types.Auction, error) {
 	return &auction, nil
 }
 
-func (p *PostgresqlStore) GetAuctions() ([]types.Auction, error) {
-	return make([]types.Auction, 0), nil
-}
-
 func (p *PostgresqlStore) SaveAuction(auction *types.Auction) (*types.Auction, error) {
 	query := "INSERT INTO auction (name, description, is_active, is_private, owner_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at"
 	args := []any{auction.Name, auction.Description, auction.IsActive, auction.IsPrivate, auction.OwnerId}
@@ -225,7 +223,7 @@ func (p *PostgresqlStore) DeleteAuction(id int64) error {
 }
 
 func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.AuctionLot, error) {
-	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0) FROM auction_lot WHERE auction_id = $1"
+	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed FROM auction_lot WHERE auction_id = $1"
 	rows, err := p.connection.Query(context.Background(), query, auctionId)
 	if err != nil {
 		p.logError(err, "get auction lots by auction id")
@@ -237,7 +235,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 	for rows.Next() {
 		var lot types.AuctionLot
 
-		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId); err != nil {
+		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed); err != nil {
 			p.logError(err, "get auction lots by auction id; rows")
 			return nil, err
 		}
@@ -254,7 +252,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 }
 
 func (p *PostgresqlStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error) {
-	query := "INSERT INTO auction_lot (NAME, DESCRIPTION, IS_ACTIVE, MINIMAL_BID, RESERVE_PRICE, BIN_PRICE, AUCTION_ID) VALUES (@name, @description, @is_active, @minimal_bid, @reserve_price, @bin_price, @auction_id) RETURNING id, created_at"
+	query := "INSERT INTO auction_lot (NAME, DESCRIPTION, IS_ACTIVE, MINIMAL_BID, RESERVE_PRICE, BIN_PRICE, AUCTION_ID, IS_CLOSED) VALUES (@name, @description, @is_active, @minimal_bid, @reserve_price, @bin_price, @auction_id, @is_closed) RETURNING id, created_at"
 	args := pgx.NamedArgs{
 		"name":          auctionLot.Name,
 		"description":   auctionLot.Description,
@@ -263,6 +261,7 @@ func (p *PostgresqlStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.A
 		"reserve_price": auctionLot.ReservePrice,
 		"bin_price":     auctionLot.BinPrice,
 		"auction_id":    auctionLot.AuctionID,
+		"is_closed":     auctionLot.IsClosed,
 	}
 
 	var (
@@ -303,12 +302,12 @@ func (p *PostgresqlStore) GetAuctionLotCount(auctionId int64) (int, error) {
 }
 
 func (p *PostgresqlStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
-	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0) FROM auction_lot WHERE id = $1"
+	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed FROM auction_lot WHERE id = $1"
 
 	var lot types.AuctionLot
 	lot.ID = auctionLotId
 
-	returningArgs := []any{&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId}
+	returningArgs := []any{&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed}
 
 	err := p.connection.QueryRow(context.Background(), query, auctionLotId).Scan(returningArgs...)
 	if err != nil {
@@ -389,7 +388,7 @@ func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error 
 
 func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.AuctionLotUpdateRequest) (*types.AuctionLot, error) {
 	updateLotCategorySubQuery := "WITH category_subquery AS (INSERT INTO auction_lot_categories (auction_lot_id, category_id) VALUES (@id, @category_id) ON CONFLICT (auction_lot_id) DO UPDATE SET category_id = @category_id RETURNING category_id), "
-	updateLotQuery := "lot_subquery AS (UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at) "
+	updateLotQuery := "lot_subquery AS (UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at, is_closed) "
 	selectQuery := "SELECT * FROM category_subquery, lot_subquery"
 
 	query := updateLotCategorySubQuery + updateLotQuery + selectQuery
@@ -407,7 +406,7 @@ func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.Au
 	var lot types.AuctionLot
 	lot.ID = auctionLotId
 
-	returningArgs := []any{&lot.CategoryId, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt}
+	returningArgs := []any{&lot.CategoryId, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt, &lot.IsClosed}
 
 	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
 		p.logError(err, "update auction lot")
@@ -426,4 +425,167 @@ func (p *PostgresqlStore) SetAuctionLotActiveStatus(auctionLotId int64, isActive
 	}
 
 	return nil
+}
+
+func (p *PostgresqlStore) GetAuctions(filter types.AuctionFilter) ([]types.Auction, error) {
+	query := `SELECT DISTINCT ON (a.id) a.id, a.name, a.description, a.is_active, a.is_private, a.created_at, a.updated_at, a.deleted_at, a.owner_id FROM auction a
+		LEFT JOIN auction_lot l on a.id = l.auction_id AND l.is_active = true
+		LEFT JOIN auction_lot_categories c on l.id = c.auction_lot_id
+		WHERE (@name = '' OR a.name LIKE @name )
+			AND (@category_id = 0 OR @category_id = c.category_id)
+			AND a.is_active = true
+			AND l.is_active = true
+		ORDER BY @order_by
+		OFFSET @offset LIMIT @limit`
+
+	args := pgx.NamedArgs{
+		"name":        filter.Name,
+		"category_id": filter.CategoryId,
+		"order_by":    filter.SortBy,
+		"limit":       filter.PerPage,
+		"offset":      filter.Page * filter.PerPage,
+	}
+
+	rows, err := p.connection.Query(context.Background(), query, args)
+	if err != nil {
+		p.logError(err, "get auctions")
+	}
+	defer rows.Close()
+
+	auctions := make([]types.Auction, 0)
+
+	for rows.Next() {
+		auction := types.Auction{}
+		returningArgs := []any{&auction.ID, &auction.Name, &auction.Description, &auction.IsActive, &auction.IsPrivate, &auction.CreatedAt, &auction.UpdatedAt, &auction.DeletedAt, &auction.OwnerId}
+
+		if err = rows.Scan(returningArgs...); err != nil {
+			p.logError(err, "get auctions; rows")
+			return nil, err
+		}
+
+		auctions = append(auctions, auction)
+	}
+
+	if err = rows.Err(); err != nil {
+		p.logError(err, "get auctions; after rows")
+		return nil, err
+	}
+
+	return auctions, nil
+}
+
+func (p *PostgresqlStore) SetUserFavoriteAuctionLot(userId, auctionLotId int64, isFavorite bool) error {
+	var query string
+	if isFavorite {
+		query = "INSERT INTO saved_lots (auction_lot_id, user_id) VALUES (@auction_lot_id, @user_id) ON CONFLICT (user_id, auction_lot_id) DO NOTHING"
+	} else {
+		query = "DElETE FROM saved_lots WHERE user_id = @user_id AND auction_lot_id = @auction_lot_id"
+	}
+
+	args := pgx.NamedArgs{
+		"auction_lot_id": auctionLotId,
+		"user_id":        userId,
+	}
+
+	_, err := p.connection.Exec(context.Background(), query, args)
+	if err != nil {
+		p.logError(err, "set user favorite auction lot: "+strconv.FormatBool(isFavorite))
+		return err
+	}
+
+	return nil
+}
+
+func (p *PostgresqlStore) SaveAuctionLotBid(request *types.BidMakeRequest) (*types.Bid, error) {
+	query := "INSERT INTO bid (value, user_id, auction_lot_id) VALUES (@value, @user_id, @auction_lot_id) RETURNING id, value, user_id, auction_lot_id, created_at"
+	args := pgx.NamedArgs{
+		"value":          request.Value,
+		"user_id":        request.UserId,
+		"auction_lot_id": request.AuctionLotId,
+	}
+
+	var bid types.Bid
+	returningArgs := []any{&bid.ID, &bid.Value, &bid.UserId, &bid.AuctionLotId, &bid.CreatedAt}
+
+	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
+		p.logError(err, "save auction lot bid")
+		return nil, err
+	}
+
+	return &bid, nil
+}
+
+func (p *PostgresqlStore) GetUserBids(userId int64) ([]types.UserBid, error) {
+	query := `SELECT DISTINCT ON (b.id) b.id, b.value, b.user_id, b.auction_lot_id, b.created_at, l.is_active, w.user_id = $1 AS did FROM bid b
+		LEFT JOIN auction_lot l on l.id = b.auction_lot_id
+		LEFT JOIN auction_lot_winner w on w.auction_lot_id = l.id
+		WHERE b.user_id = $1
+		AND (l.is_active = true OR w.user_id = $1)`
+
+	rows, err := p.connection.Query(context.Background(), query, userId)
+	if err != nil {
+		p.logError(err, "get user bids")
+		return nil, err
+	}
+	defer rows.Close()
+
+	bids := make([]types.UserBid, 0)
+	for rows.Next() {
+		bid := types.UserBid{
+			Bid: types.Bid{},
+		}
+		returningArgs := []any{&bid.ID, &bid.Value, &bid.UserId, &bid.AuctionLotId, &bid.CreatedAt, &bid.IsLotActive, &bid.IsWonByUser}
+
+		if err = rows.Scan(returningArgs...); err != nil {
+			p.logError(err, "get user bids; rows")
+			return nil, err
+		}
+
+		bids = append(bids, bid)
+	}
+
+	if err = rows.Err(); err != nil {
+		p.logError(err, "get user bids; after rows")
+		return nil, err
+	}
+
+	return bids, err
+}
+
+func (p *PostgresqlStore) CloseAuction(auctionId int64) error {
+	query := "WITH r AS (UPDATE auction_lot SET is_closed = true WHERE auction_id = $1) UPDATE auction SET is_closed = true WHERE id = $1"
+
+	// TODO: maybe this query should be executed in a transaction
+	if _, err := p.connection.Exec(context.Background(), query, auctionId); err != nil {
+		p.logError(err, "close auction")
+		return err
+	}
+
+	return nil
+}
+
+func (p *PostgresqlStore) CheckAuctionStatus(auctionId int64) (utils.Status, error) {
+	query := "SELECT is_closed, is_active FROM auction WHERE id = $1"
+
+	status := utils.Status{}
+
+	if err := p.connection.QueryRow(context.Background(), query, auctionId).Scan(&status.IsClosed, &status.IsActive); err != nil {
+		p.logError(err, "is auction closed")
+		return status, err
+	}
+
+	return status, nil
+}
+
+func (p *PostgresqlStore) CheckAuctionLotStatus(lotId int64) (utils.Status, error) {
+	query := "SELECT l.is_closed = true OR a.is_closed = true AS closed, l.is_active = true AND a.is_active = TRUE AS active FROM auction_lot l LEFT JOIN auction a on a.id = l.auction_id WHERE l.id = $1"
+
+	status := utils.Status{}
+
+	if err := p.connection.QueryRow(context.Background(), query, lotId).Scan(&status.IsClosed, &status.IsActive); err != nil {
+		p.logError(err, "is auction closed")
+		return status, err
+	}
+
+	return status, nil
 }
