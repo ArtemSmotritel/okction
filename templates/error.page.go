@@ -12,16 +12,18 @@ type ErrorCode int
 
 const (
 	NotFound            ErrorCode = 1
-	Forbidden                     = 2
-	Unauthorized                  = 3
-	InternalServerError           = 4
+	Forbidden           ErrorCode = 2
+	Unauthorized        ErrorCode = 3
+	InternalServerError ErrorCode = 4
+	StatusConflict      ErrorCode = 5
 )
 
 type ErrorPageHandler struct {
 	template templ.Component
 }
 
-func NewErrorPageHandler(errorCode ErrorCode) *ErrorPageHandler {
+func NewErrorPageWithMessageHandler(errorCode ErrorCode, message string) *ErrorPageHandler {
+	// TODO: maybe refactor to use Builder pattern
 	var template templ.Component
 
 	switch errorCode {
@@ -33,6 +35,8 @@ func NewErrorPageHandler(errorCode ErrorCode) *ErrorPageHandler {
 		template = unauthorized()
 	case InternalServerError:
 		template = internal()
+	case StatusConflict:
+		template = statusConflict(message)
 	default:
 		panic(fmt.Sprintf("unsupported error code was provided: %d", errorCode))
 	}
@@ -40,6 +44,10 @@ func NewErrorPageHandler(errorCode ErrorCode) *ErrorPageHandler {
 	return &ErrorPageHandler{
 		template: template,
 	}
+}
+
+func NewErrorPageHandler(errorCode ErrorCode) *ErrorPageHandler {
+	return NewErrorPageWithMessageHandler(errorCode, "")
 }
 
 func (r *ErrorPageHandler) ServeHTTP(w http.ResponseWriter, re *http.Request) {

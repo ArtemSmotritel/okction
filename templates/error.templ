@@ -48,3 +48,15 @@ templ internal() {
         </hgroup>
     }
 }
+
+templ statusConflict(message string) {
+    @main() {
+        <hr />
+        <hgroup>
+            <h2>Try again later</h2>
+            <p>
+                { message }
+            </p>
+        </hgroup>
+    }
+}
