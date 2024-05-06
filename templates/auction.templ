@@ -133,7 +133,11 @@ templ createAuctionForm(isNew bool, auction *types.Auction, errors map[string]st
             }
     >
         @form.Label("Name", auctionNameInput.ID) {
-            @form.Input(auctionNameInput.WithErrors(errors).Attributes(auction.Name))
+            if isNew {
+                @form.Input(auctionNameInput.WithErrors(errors).Attributes(""))
+            } else {
+                @form.Input(auctionNameInput.WithErrors(errors).Attributes(auction.Name))
+            }
             if errors != nil {
                 if err, ok := errors[auctionNameInput.Name]; ok {
                     <small id={ auctionNameInput.AriaDescribedBy }>{ err }</small>
@@ -141,7 +145,11 @@ templ createAuctionForm(isNew bool, auction *types.Auction, errors map[string]st
             }
         }
         @form.Label("Description", auctionDescriptionInput.ID) {
-            @form.Input(auctionDescriptionInput.WithErrors(errors).Attributes(auction.Description))
+            if isNew {
+                @form.Input(auctionDescriptionInput.WithErrors(errors).Attributes(""))
+            } else {
+                @form.Input(auctionDescriptionInput.WithErrors(errors).Attributes(auction.Description))
+            }
             if errors != nil {
                 if err, ok := errors[auctionDescriptionInput.Name]; ok {
                     <small id={ auctionDescriptionInput.AriaDescribedBy }>{ err }</small>
