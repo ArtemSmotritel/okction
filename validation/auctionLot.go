@@ -3,6 +3,7 @@ package validation
 import (
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
+	"github.com/shopspring/decimal"
 	"strconv"
 )
 
@@ -29,18 +30,24 @@ func (v *AuctionLotUpdateValidator) Validate() (bool, error) {
 
 	if minimalBid, err := utils.StringToDecimal(v.Request.MinimalBidStr); err != nil {
 		v.Errors["minimalBid"] = "Minimal Bid price must be a number"
+	} else if comp := minimalBid.Compare(decimal.Zero); comp < 0 {
+		v.Errors["minimalBid"] = "Minimal Bid must be no less than zero"
 	} else {
 		v.Request.MinimalBid = minimalBid
 	}
 
 	if reservePrice, err := utils.StringToDecimal(v.Request.ReservePriceStr); err != nil {
 		v.Errors["reservePrice"] = "Reserve Price price must be a number"
+	} else if comp := reservePrice.Compare(decimal.Zero); comp < 0 {
+		v.Errors["reservePrice"] = "Reserve Price must be no less than zero"
 	} else {
 		v.Request.ReservePrice = reservePrice
 	}
 
 	if binPrice, err := utils.StringToDecimal(v.Request.BinPriceStr); err != nil {
 		v.Errors["binPrice"] = "Bin Price must be a number"
+	} else if comp := binPrice.Compare(decimal.Zero); comp < 0 {
+		v.Errors["binPrice"] = "Bin Price must be no less than zero"
 	} else {
 		v.Request.BinPrice = binPrice
 	}
