@@ -59,7 +59,7 @@ templ auctionLotEditPage(auctionLot *types.AuctionLot, categories []types.Catego
                 if true {
                     <p>This auction lot doesn't have any photos yet</p>
                 }
-                <button class="secondary">Add a photo</button>
+                <button class="secondary" disabled>Add a photo</button>
             </section>
             <section>
                 <h2>Edit "{ auctionLot.Name }"</h2>
@@ -176,7 +176,6 @@ templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string,
         @form.Label("Reserve Price", lotReservePriceInput.ID) {
             @form.Input(lotReservePriceInput.WithErrors(errors).Attributes(auctionLot.ReservePrice))
             <small id={ lotReservePriceInput.AriaDescribedBy }>
-            { "Set 0 to disable" }
             if errors != nil {
                 if err, ok := errors[lotReservePriceInput.Name]; ok {
                     { "\n" + err }
@@ -191,7 +190,6 @@ templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string,
         @form.Label("Bin Price", lotBinPriceInput.ID) {
             @form.Input(lotBinPriceInput.WithErrors(errors).Attributes(auctionLot.BinPrice))
             <small id={ lotBinPriceInput.AriaDescribedBy }>
-            { "Set 0 to disable" }
             if errors != nil {
                 if err, ok := errors[lotBinPriceInput.Name]; ok {
                     { "\n" + err }
