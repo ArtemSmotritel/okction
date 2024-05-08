@@ -521,6 +521,10 @@ func (p *PostgresqlStore) GetUserBids(userId int64) ([]types.UserBid, error) {
 		LEFT JOIN auction_lot_winner w on w.auction_lot_id = l.id
 		WHERE b.user_id = $1
 		AND (l.is_active = true OR w.user_id = $1)`
+	//SELECT DISTINCT ON (b.id) b.id, b.value, b.auction_lot_id, l.is_active, COALESCE((w.bid_id = b.id), false) AS did_win_lot FROM bid b
+	//LEFT JOIN auction_lot l on l.id = b.auction_lot_id
+	//LEFT JOIN auction_lot_winner w on w.bid_id = b.id
+	//WHERE b.user_id = 5;
 
 	rows, err := p.connection.Query(context.Background(), query, userId)
 	if err != nil {
