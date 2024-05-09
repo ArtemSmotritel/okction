@@ -136,3 +136,32 @@ func NewAuctionEditFormErrorBadRequestHandler(auction *types.Auction, errors map
 		Template: createAuctionForm(false, auction, errors),
 	}
 }
+
+func NewAuctionsListPageHandler(pageParam *types.AuctionsListPageParameter, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newAuctionsListPage(ctx, pageParam),
+	}
+}
+
+func newAuctionsListPage(ctx context.Context, pageParam *types.AuctionsListPageParameter) templ.Component {
+	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		hxBoosted = false
+	}
+
+	if hxBoosted {
+		return auctionsList(pageParam)
+	}
+
+	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
+	if err != nil {
+		isAuthorized = false
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(isAuthorized))
+	builder.AppendComponent(auctionsList(pageParam))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
+}

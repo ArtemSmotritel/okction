@@ -68,8 +68,8 @@ templ mainMain(categories ...types.Category) {
             <h2>
                 Find yourself an auction
             </h2>
-            <form role="search">
-                <input id="search-input" name="search" type="search" placeholder="Search" />
+            <form role="search" hx-get="/auctions" hx-target="#main" hx-swap="outerHTML">
+                <input id="search-input" name="name" type="search" placeholder="Search" />
                 <input type="submit" value="Search" />
             </form>
         </section>
@@ -79,7 +79,7 @@ templ mainMain(categories ...types.Category) {
             </h2>
               <ul>
                 for _, category := range categories {
-                  <li><a href={ utils.ConvertToTemplURL("categories", category.ID, ) }>{ category.Name }</a></li>
+                  <li><a href={ utils.ConvertToTemplURL("categories", category.ID, "auctions" ) }>{ category.Name }</a></li>
                 }
               </ul>
         </section>

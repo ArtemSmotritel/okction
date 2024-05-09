@@ -3,6 +3,7 @@ package templates
 import "github.com/artemsmotritel/oktion/types"
 import "github.com/artemsmotritel/oktion/utils"
 import "github.com/artemsmotritel/oktion/templates/form"
+import "strings"
 
 templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction, errors map[string]string) {
     @main() {
@@ -302,4 +303,58 @@ templ auctionListItem(auction *types.Auction) {
             </div>
         </div>
     </li>
+}
+
+templ auctionsList(pageParam *types.AuctionsListPageParameter) {
+    @main() {
+        <section>
+            <h2>
+                Find yourself an auction
+            </h2>
+            <form hx-pusl-url="true" role="search" hx-get="/auctions" hx-target="#main" hx-swap="outerHTML">
+                <input id="search-input" name="name" type="search" placeholder="Search"
+                if pageParam.Filter.Name != "" {
+                    value={ strings.Trim(pageParam.Filter.Name, "%") }
+                }
+                />
+                <input type="submit" value="Search" />
+            </form>
+        </section>
+        <section>
+            <hgroup>
+                <h2>
+                    if pageParam.CategoryName != "" {
+                        { pageParam.CategoryName + " Auctions" }
+                    } else {
+                        Auctions
+                    }
+                </h2>
+                <h3>
+                    if pageParam.AuctionsFound > 1 {
+                        We have found { utils.IntToString(pageParam.AuctionsFound) } auctions
+                    } else if pageParam.AuctionsFound == 1 {
+                        We have found 1 auction
+                    } else {
+                        We couldn't find any auctions using this criteria
+                    }
+                </h3>
+            </hgroup>
+            <hr />
+            <section>
+                <ul>
+                    for _, a := range pageParam.Auctions {
+                        <li>
+                            <hgroup style="margin-bottom: 0;">
+                                <h5><a hx-boost="true" href={ utils.ConvertToTemplURL("auctions", utils.IdToString(a.ID), "view") }>{ a.Name }</a></h5>
+                                <p>Created at: { a.CreatedAt.Format("15:04 Mon, the 2 of Jan") }</p>
+                            </hgroup>
+                            <p class="cut-to-two-rows">
+                                { a.Description }
+                            </p>
+                        </li>
+                    }
+                </ul>
+            </section>
+        </section>
+    }
 }

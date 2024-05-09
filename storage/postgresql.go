@@ -427,23 +427,55 @@ func (p *PostgresqlStore) SetAuctionLotActiveStatus(auctionLotId int64, isActive
 	return nil
 }
 
-func (p *PostgresqlStore) GetAuctions(filter types.AuctionFilter) ([]types.Auction, error) {
-	query := `SELECT DISTINCT ON (a.id) a.id, a.name, a.description, a.is_active, a.is_private, a.created_at, a.updated_at, a.deleted_at, a.owner_id FROM auction a
-		LEFT JOIN auction_lot l on a.id = l.auction_id AND l.is_active = true
-		LEFT JOIN auction_lot_categories c on l.id = c.auction_lot_id
-		WHERE (@name = '' OR a.name LIKE @name )
-			AND (@category_id = 0 OR @category_id = c.category_id)
-			AND a.is_active = true
-			AND l.is_active = true
-		ORDER BY @order_by
-		OFFSET @offset LIMIT @limit`
+func (p *PostgresqlStore) CountAuctionsAndGetCategoryName(filter types.AuctionFilter) (int, sql.NullString, error) {
+	query := `SELECT DISTINCT ON (a.id) a.id, cat.name FROM auction a
+			LEFT JOIN auction_lot l ON l.auction_id = a.id
+			LEFT JOIN auction_lot_categories c ON c.auction_lot_id = l.id
+            LEFT JOIN category cat ON cat.id = c.category_id
+		WHERE a.is_active
+			AND (@category_id = 0 OR c.category_id = @category_id)
+			AND (@name = '' OR LOWER(a.name) LIKE @name)
+			AND (@show_deleted OR a.deleted_at IS NULL)
+		GROUP BY a.id, cat.name
+	`
 
 	args := pgx.NamedArgs{
-		"name":        filter.Name,
-		"category_id": filter.CategoryId,
-		"order_by":    filter.SortBy,
-		"limit":       filter.PerPage,
-		"offset":      filter.Page * filter.PerPage,
+		"name":         filter.Name,
+		"category_id":  filter.CategoryId,
+		"order_by":     filter.SortBy,
+		"show_deleted": filter.ShowDeleted,
+	}
+
+	var (
+		count        int
+		categoryName sql.NullString
+	)
+
+	if err := p.connection.QueryRow(context.Background(), query, args).Scan(&count, &categoryName); err != nil {
+		p.logError(err, "count auctionsAndGetCategoryName")
+	}
+
+	return count, categoryName, nil
+}
+
+func (p *PostgresqlStore) GetAuctions(filter types.AuctionFilter) ([]types.Auction, error) {
+	query := `SELECT DISTINCT ON (a.id) a.id, a.name, a.description, a.is_active, a.is_private, a.created_at, a.updated_at, a.deleted_at, a.owner_id FROM auction a
+			LEFT JOIN auction_lot l ON l.auction_id = a.id
+			LEFT JOIN auction_lot_categories c ON c.auction_lot_id = l.id
+		WHERE a.is_active
+			AND (@category_id = 0 OR c.category_id = @category_id)
+			AND (@name = '' OR LOWER(a.name) LIKE @name)
+			AND (@show_deleted OR a.deleted_at IS NULL)
+		OFFSET @offset LIMIT @limit
+	`
+
+	args := pgx.NamedArgs{
+		"name":         filter.Name,
+		"category_id":  filter.CategoryId,
+		"order_by":     filter.SortBy,
+		"limit":        filter.PerPage,
+		"offset":       filter.Page * filter.PerPage,
+		"show_deleted": filter.ShowDeleted,
 	}
 
 	rows, err := p.connection.Query(context.Background(), query, args)
@@ -477,9 +509,9 @@ func (p *PostgresqlStore) GetAuctions(filter types.AuctionFilter) ([]types.Aucti
 func (p *PostgresqlStore) SetUserFavoriteAuctionLot(userId, auctionLotId int64, isFavorite bool) error {
 	var query string
 	if isFavorite {
-		query = "INSERT INTO saved_lots (auction_lot_id, user_id) VALUES (@auction_lot_id, @user_id) ON CONFLICT (user_id, auction_lot_id) DO NOTHING"
+		query = "INSERT INTO saved_auction_lots (auction_lot_id, user_id) VALUES (@auction_lot_id, @user_id) ON CONFLICT (user_id, auction_lot_id) DO NOTHING"
 	} else {
-		query = "DElETE FROM saved_lots WHERE user_id = @user_id AND auction_lot_id = @auction_lot_id"
+		query = "DElETE FROM saved_auction_lots WHERE user_id = @user_id AND auction_lot_id = @auction_lot_id"
 	}
 
 	args := pgx.NamedArgs{

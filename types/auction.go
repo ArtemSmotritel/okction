@@ -119,11 +119,12 @@ func NewAuctionUpdateRequest(values url.Values, id int64) AuctionUpdateRequest {
 }
 
 type AuctionFilter struct {
-	CategoryId int64
-	Name       string
-	PerPage    int
-	Page       int
-	SortBy     string
+	CategoryId  int64
+	Name        string
+	PerPage     int
+	Page        int
+	SortBy      string
+	ShowDeleted bool
 }
 
 type AuctionFilterBuilder struct {
@@ -134,27 +135,27 @@ func NewAuctionFilterBuilder() *AuctionFilterBuilder {
 	return &AuctionFilterBuilder{}
 }
 
-func (b *AuctionFilterBuilder) WithCategoryId(id int64) *AuctionFilterBuilder {
+func (b *AuctionFilterBuilder) SetCategoryId(id int64) *AuctionFilterBuilder {
 	b.filter.CategoryId = id
 	return b
 }
 
-func (b *AuctionFilterBuilder) WithName(name string) *AuctionFilterBuilder {
+func (b *AuctionFilterBuilder) SetName(name string) *AuctionFilterBuilder {
 	b.filter.Name = name
 	return b
 }
 
-func (b *AuctionFilterBuilder) WithPerPage(perPage int) *AuctionFilterBuilder {
+func (b *AuctionFilterBuilder) SetPerPage(perPage int) *AuctionFilterBuilder {
 	b.filter.PerPage = perPage
 	return b
 }
 
-func (b *AuctionFilterBuilder) WithPage(page int) *AuctionFilterBuilder {
+func (b *AuctionFilterBuilder) SetPage(page int) *AuctionFilterBuilder {
 	b.filter.Page = page
 	return b
 }
 
-func (b *AuctionFilterBuilder) WithSortBy(field string) *AuctionFilterBuilder {
+func (b *AuctionFilterBuilder) SetSortBy(field string) *AuctionFilterBuilder {
 	b.filter.SortBy = field
 	return b
 }
@@ -164,4 +165,45 @@ func (b *AuctionFilterBuilder) Build() AuctionFilter {
 		b.filter.SortBy = "id"
 	}
 	return b.filter
+}
+
+type AuctionsListPageParameter struct {
+	AuctionsFound int
+	Auctions      []Auction
+	Filter        AuctionFilter
+	CategoryName  string
+}
+
+type AuctionsListPageParameterBuilder struct {
+	param *AuctionsListPageParameter
+}
+
+func NewAuctionsListPageParameterBuilder() *AuctionsListPageParameterBuilder {
+	return &AuctionsListPageParameterBuilder{
+		param: &AuctionsListPageParameter{},
+	}
+}
+
+func (b *AuctionsListPageParameterBuilder) SetAuctionsFound(num int) *AuctionsListPageParameterBuilder {
+	b.param.AuctionsFound = num
+	return b
+}
+
+func (b *AuctionsListPageParameterBuilder) SetAuctions(auctions []Auction) *AuctionsListPageParameterBuilder {
+	b.param.Auctions = auctions
+	return b
+}
+
+func (b *AuctionsListPageParameterBuilder) SetFilter(filter AuctionFilter) *AuctionsListPageParameterBuilder {
+	b.param.Filter = filter
+	return b
+}
+
+func (b *AuctionsListPageParameterBuilder) SetCategoryName(name string) *AuctionsListPageParameterBuilder {
+	b.param.CategoryName = name
+	return b
+}
+
+func (b *AuctionsListPageParameterBuilder) Build() *AuctionsListPageParameter {
+	return b.param
 }

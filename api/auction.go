@@ -9,6 +9,7 @@ import (
 	"github.com/artemsmotritel/oktion/validation"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
@@ -69,19 +70,57 @@ func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetAuctions(w http.ResponseWriter, r *http.Request) {
-	auctions, err := s.store.GetAuctions()
+	categoryIdOrNameStr := r.URL.Query().Get("category")
+	name := r.URL.Query().Get("name")
+	pageStr := r.URL.Query().Get("page")
 
+	filterBuilder := types.NewAuctionFilterBuilder()
+	filterBuilder = filterBuilder.SetPerPage(10)
+	if name != "" {
+		filterBuilder = filterBuilder.SetName("%" + strings.ToLower(name) + "%")
+	}
+	if val, err := strconv.ParseInt(categoryIdOrNameStr, 10, 64); err == nil {
+		filterBuilder = filterBuilder.SetCategoryId(val)
+	}
+	if val, err := strconv.Atoi(pageStr); err == nil {
+		filterBuilder = filterBuilder.SetPage(val)
+	}
+
+	filter := filterBuilder.Build()
+
+	auctions, err := s.store.GetAuctions(filter)
 	if err != nil {
-		// TODO introduce logging to error responses
 		s.internalError(w, r)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(auctions); err != nil {
-		s.logger.Println("ERROR: ", err.Error())
+	totalAuctionCount, categoryName, err := s.store.CountAuctionsAndGetCategoryName(filter)
+	if err != nil {
+		s.internalError(w, r)
+		return
 	}
+
+	pageParamBuilder := types.NewAuctionsListPageParameterBuilder()
+	pageParamBuilder = pageParamBuilder.SetAuctions(auctions)
+	pageParamBuilder = pageParamBuilder.SetAuctionsFound(totalAuctionCount)
+	pageParamBuilder = pageParamBuilder.SetFilter(filter)
+	if categoryName.Valid {
+		pageParamBuilder = pageParamBuilder.SetCategoryName(categoryName.String)
+	}
+
+	pageParam := pageParamBuilder.Build()
+
+	urlToPushInBrowserUrl := "/auctions?"
+	if filter.Name != "" {
+		urlToPushInBrowserUrl += "name=" + name
+	}
+	if filter.CategoryId != 0 {
+		urlToPushInBrowserUrl += "category=" + strconv.FormatInt(filter.CategoryId, 10)
+	}
+
+	w.Header().Set("HX-Push-Url", urlToPushInBrowserUrl)
+	handler := templates.NewAuctionsListPageHandler(pageParam, r.Context())
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {

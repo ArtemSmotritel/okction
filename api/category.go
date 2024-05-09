@@ -1,10 +1,7 @@
 package api
 
 import (
-	"errors"
 	"fmt"
-	"github.com/artemsmotritel/oktion/types"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 )
@@ -16,17 +13,6 @@ func (s *Server) handleGetCategoryAuctions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	filterBuilder := types.NewAuctionFilterBuilder().WithCategoryId(id)
-
-	_, err = s.store.GetAuctions(filterBuilder.Build())
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// TODO return either a 404 or an empty list with a special message
-			return
-		}
-		s.internalError(w, r)
-		return
-	}
-
-	// TODO finish UI part
+	w.Header().Set("Location", "/auctions?category="+strconv.FormatInt(id, 10))
+	w.WriteHeader(http.StatusSeeOther)
 }

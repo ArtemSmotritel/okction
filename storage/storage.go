@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
 )
@@ -17,6 +18,7 @@ type Storage interface {
 	GetOwnerIDByAuctionID(auctionId int64) (int64, error)
 	GetAuctionByID(id int64) (*types.Auction, error)
 	GetAuctions(filter types.AuctionFilter) ([]types.Auction, error)
+	CountAuctionsAndGetCategoryName(filter types.AuctionFilter) (int, sql.NullString, error)
 	SaveAuction(auction *types.Auction) (*types.Auction, error)
 	DeleteAuction(id int64) error
 	UpdateAuction(auction types.AuctionUpdateRequest) (*types.Auction, error)
