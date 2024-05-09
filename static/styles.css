@@ -57,3 +57,29 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* For webkit browsers */
+*::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--pico-secondary-background);
+}
+
+/* For Firefox */
+/* width */
+*::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+*::-webkit-scrollbar-track {
+    background-color: var(--pico-muted-border-color);
+}
+
+/* Handle on hover */
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--pico-secondary-hover-background);
+}
+
