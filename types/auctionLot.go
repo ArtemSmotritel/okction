@@ -14,6 +14,8 @@ type AuctionLot struct {
 	Description  string
 	CategoryId   int64
 	IsActive     bool
+	IsClosed     bool
+	CanBeBidOn   bool
 	MinimalBid   decimal.Decimal
 	ReservePrice decimal.Decimal
 	BinPrice     decimal.Decimal
@@ -56,4 +58,10 @@ func NewAuctionLotUpdateRequest(values url.Values, lotId, auctionId int64) (*Auc
 		ReservePriceStr: values.Get("reservePrice"),
 		BinPriceStr:     values.Get("binPrice"),
 	}, nil
+}
+
+type AuctionLotViewPageParam struct {
+	Lot               *AuctionLot
+	DoesUserFollowLot bool
+	CanBeBidOn        bool
 }

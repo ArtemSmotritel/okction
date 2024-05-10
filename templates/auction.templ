@@ -3,6 +3,7 @@ package templates
 import "github.com/artemsmotritel/oktion/types"
 import "github.com/artemsmotritel/oktion/utils"
 import "github.com/artemsmotritel/oktion/templates/form"
+import "strings"
 
 templ editAuctionPage(auctionLots []types.AuctionLot, auction *types.Auction, errors map[string]string) {
     @main() {
@@ -259,6 +260,35 @@ templ myAuctionsPage(auctions []types.Auction) {
                 </footer>
             </article>
         </dialog>
+        <dialog id="confirm-close-dialog">
+            <article>
+                <header>
+                    <button
+                    aria-label="Close"
+                    rel="prev"
+                    value="cancel"
+                    onclick="toggleModal(event)"
+                    ></button>
+                    <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                    Do you really want to close this auction?
+                </p>
+                <footer>
+                    <button
+                    role="button"
+                    class="secondary"
+                    onclick="toggleModal(event)"
+                    value="cancel"
+                    >
+                        Cancel
+                    </button>
+                    <button value="confirm" autofocus onclick="toggleModal(event)">
+                        Confirm
+                    </button>
+                </footer>
+            </article>
+        </dialog>
     }
 }
 
@@ -299,7 +329,126 @@ templ auctionListItem(auction *types.Auction) {
                 class="secondary"
                 hx-swap="outerHTML"
                 hx-target="#main"/>
+                <input
+                type="button"
+                if auction.IsActive {
+                    value="Close"
+                    hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "close") }
+                    hx-confirm="confirm-close-dialog"
+                } else {
+                    disabled
+                }
+                data-confirm-trigger="true"
+                class="contrast"
+                hx-swap="outerHTML"
+                hx-target="#main"/>
             </div>
         </div>
     </li>
+}
+
+templ auctionsList(pageParam *types.AuctionsListPageParameter) {
+    @main() {
+        <section>
+            <h2>
+                Find yourself an auction
+            </h2>
+            <form hx-pusl-url="true" role="search" hx-get="/auctions" hx-target="#main" hx-swap="outerHTML">
+                <input id="search-input" name="name" type="search" placeholder="Search"
+                if pageParam.Filter.Name != "" {
+                    value={ strings.Trim(pageParam.Filter.Name, "%") }
+                }
+                />
+                <input type="submit" value="Search" />
+            </form>
+        </section>
+        <section>
+            <hgroup>
+                <h2>
+                    if pageParam.CategoryName != "" {
+                        { pageParam.CategoryName + " Auctions" }
+                    } else {
+                        Auctions
+                    }
+                </h2>
+                <h3>
+                    if pageParam.AuctionsFound > 1 {
+                        We have found { utils.IntToString(pageParam.AuctionsFound) } auctions
+                    } else if pageParam.AuctionsFound == 1 {
+                        We have found 1 auction
+                    } else {
+                        We couldn't find any auctions using this criteria
+                    }
+                </h3>
+            </hgroup>
+            <hr />
+            <section>
+                <ul>
+                    for _, a := range pageParam.Auctions {
+                        <li>
+                            <hgroup style="margin-bottom: 0;">
+                                <h5><a hx-boost="true" href={ utils.ConvertToTemplURL("auctions", utils.IdToString(a.ID), "view") }>{ a.Name }</a></h5>
+                                <p>Created at: { a.CreatedAt.Format("15:04 Mon, the 2 of Jan") }</p>
+                            </hgroup>
+                            <p class="cut-to-two-rows">
+                                { a.Description }
+                            </p>
+                        </li>
+                    }
+                </ul>
+            </section>
+        </section>
+    }
+}
+
+templ viewAuctionPage(param *types.AuctionViewPageParam) {
+    @main() {
+        <section class="grid">
+            <section>
+                <hgroup>
+                    <h2>
+                        { param.Auction.Name }
+                    </h2>
+                    <h3>
+                        Created At: { param.Auction.CreatedAt.Format("15:04 Mon, the 2 of Jan") }
+                    </h3>
+                </hgroup>
+                if param.Owner.Phone != "" {
+                    if param.IsAuthorized {
+                        if param.Owner.Phone != "" {
+                            <blockquote>
+                                { param.Owner.Phone }
+                                <footer>
+                                    <cite>— { param.Owner.FullName }</cite>
+                                </footer>
+                            </blockquote>
+                        }
+                    } else {
+                        <small>Login to see the owner number</small>
+                    }
+                }
+                <hr />
+                <p style="height: 400px; overflow: auto;">
+                    { param.Auction.Description }
+                </p>
+            </section>
+            <section>
+                <hgroup>
+                    <h3>Auction Lots</h3>
+                    if len(param.Lots) == 0 {
+                        <h4>There are no lots in this auction yet</h4>
+                    } else if len(param.Lots) == 1 {
+                        <h4>There is 1 lot in this auction</h4>
+                    } else {
+                        <h4>There are { utils.IntToString(len(param.Lots)) } lots in this auction</h4>
+                    }
+                </hgroup>
+                <ul>
+                    for _, l := range param.Lots {
+                        @auctionLotViewListItem(&l)
+                    }
+                </ul>
+            </section>
+        </section>
+    }
 }

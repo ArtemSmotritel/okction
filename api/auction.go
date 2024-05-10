@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
@@ -9,6 +8,7 @@ import (
 	"github.com/artemsmotritel/oktion/validation"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func (s *Server) handleNewAuction(w http.ResponseWriter, r *http.Request) {
@@ -69,22 +69,60 @@ func (s *Server) handleGetMyAuctions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetAuctions(w http.ResponseWriter, r *http.Request) {
-	auctions, err := s.store.GetAuctions()
+	categoryIdOrNameStr := r.URL.Query().Get("category")
+	name := r.URL.Query().Get("name")
+	pageStr := r.URL.Query().Get("page")
 
+	filterBuilder := types.NewAuctionFilterBuilder()
+	filterBuilder = filterBuilder.SetPerPage(10)
+	if name != "" {
+		filterBuilder = filterBuilder.SetName("%" + strings.ToLower(name) + "%")
+	}
+	if val, err := strconv.ParseInt(categoryIdOrNameStr, 10, 64); err == nil {
+		filterBuilder = filterBuilder.SetCategoryId(val)
+	}
+	if val, err := strconv.Atoi(pageStr); err == nil {
+		filterBuilder = filterBuilder.SetPage(val)
+	}
+
+	filter := filterBuilder.Build()
+
+	auctions, err := s.store.GetAuctions(filter)
 	if err != nil {
-		// TODO introduce logging to error responses
 		s.internalError(w, r)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(auctions); err != nil {
-		s.logger.Println("ERROR: ", err.Error())
+	totalAuctionCount, categoryName, err := s.store.CountAuctionsAndGetCategoryName(filter)
+	if err != nil {
+		s.internalError(w, r)
+		return
 	}
+
+	pageParamBuilder := types.NewAuctionsListPageParameterBuilder()
+	pageParamBuilder = pageParamBuilder.SetAuctions(auctions)
+	pageParamBuilder = pageParamBuilder.SetAuctionsFound(totalAuctionCount)
+	pageParamBuilder = pageParamBuilder.SetFilter(filter)
+	if categoryName.Valid {
+		pageParamBuilder = pageParamBuilder.SetCategoryName(categoryName.String)
+	}
+
+	pageParam := pageParamBuilder.Build()
+
+	urlToPushInBrowserUrl := "/auctions?"
+	if filter.Name != "" {
+		urlToPushInBrowserUrl += "name=" + name
+	}
+	if filter.CategoryId != 0 {
+		urlToPushInBrowserUrl += "category=" + strconv.FormatInt(filter.CategoryId, 10)
+	}
+
+	w.Header().Set("HX-Push-Url", urlToPushInBrowserUrl)
+	handler := templates.NewAuctionsListPageHandler(pageParam, r.Context())
+	handler.ServeHTTP(w, r)
 }
 
-func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetAuctionView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 
 	if err != nil {
@@ -104,11 +142,32 @@ func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(auction); err != nil {
-		s.logger.Println("ERROR: ", err.Error())
+	lots, err := s.store.GetAuctionLotsByAuctionID(auction.ID)
+	if err != nil {
+		s.internalError(w, r)
+		return
 	}
+
+	user, err := s.store.GetUserByID(auction.OwnerId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	isAuth, err := utils.ExtractValueFromContext[bool](r.Context(), "isAuthorized")
+	if err != nil {
+		isAuth = false
+	}
+
+	pageParam := types.AuctionViewPageParam{
+		Auction:      auction,
+		Lots:         lots,
+		Owner:        user,
+		IsAuthorized: isAuth,
+	}
+
+	handler := templates.NewAuctionViewHandler(&pageParam, r.Context())
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {
@@ -261,6 +320,41 @@ func (s *Server) handleReinstateAuction(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err = s.store.SetAuctionActiveStatus(id, true); err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	auctions, err := s.store.GetAuctionsByOwnerId(userId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	w.Header().Set("HX-Retarget", "#main")
+	w.Header().Set("HX-Reswap", "outerHTML")
+	handler := templates.NewMyAuctionsPageHandler(auctions)
+	handler.ServeHTTP(w, r)
+}
+
+func (s *Server) handleCloseAuction(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+		return
+	}
+	userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+	if err != nil {
+		// TODO : make user there is userId in each protected request handler
+		s.badRequestError(w, r, "Not authorized")
+		return
+	}
+
+	if err = s.store.SetWinnersToAllAuctionLots(id); err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	if err = s.store.CloseAuction(id); err != nil {
 		s.internalError(w, r)
 		return
 	}

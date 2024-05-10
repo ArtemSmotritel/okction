@@ -136,3 +136,61 @@ func NewAuctionEditFormErrorBadRequestHandler(auction *types.Auction, errors map
 		Template: createAuctionForm(false, auction, errors),
 	}
 }
+
+func NewAuctionsListPageHandler(pageParam *types.AuctionsListPageParameter, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newAuctionsListPage(ctx, pageParam),
+	}
+}
+
+func newAuctionsListPage(ctx context.Context, pageParam *types.AuctionsListPageParameter) templ.Component {
+	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		hxBoosted = false
+	}
+
+	if hxBoosted {
+		return auctionsList(pageParam)
+	}
+
+	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
+	if err != nil {
+		isAuthorized = false
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(isAuthorized))
+	builder.AppendComponent(auctionsList(pageParam))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
+}
+
+func NewAuctionViewHandler(pageParam *types.AuctionViewPageParam, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newAuctionViewPage(ctx, pageParam),
+	}
+}
+
+func newAuctionViewPage(ctx context.Context, pageParam *types.AuctionViewPageParam) templ.Component {
+	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		hxBoosted = false
+	}
+
+	if hxBoosted {
+		return viewAuctionPage(pageParam)
+	}
+
+	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
+	if err != nil {
+		isAuthorized = false
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(isAuthorized))
+	builder.AppendComponent(viewAuctionPage(pageParam))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
+}

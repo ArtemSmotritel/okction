@@ -47,6 +47,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 		s.handleNotFound(w, r)
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
+	mux.Handle("GET /my-saved-auction-lots", s.onlyAuthorizedMiddleware(http.HandlerFunc(s.handleGetSavedAuctionLots)))
 	mux.Handle("GET /my-auctions", s.onlyAuthorizedMiddleware(http.HandlerFunc(s.handleGetMyAuctions)))
 	mux.Handle("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleEditAuction), "id"))
 	mux.Handle("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleCreateAuctionLot), "id"))
@@ -65,7 +66,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
 	mux.HandleFunc("GET /auctions/new", s.handleNewAuction)
-	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
+	mux.HandleFunc("GET /auctions/{id}/view", s.handleGetAuctionView)
 
 	mux.Handle("PUT /auctions/{id}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuction), "id"))
 	mux.Handle("POST /auctions/{id}/archive", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleArchiveAuction), "id"))
@@ -73,6 +74,15 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.Handle("PUT /auctions/{auctionId}/lots/{lotId}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuctionLot), "auctionId"))
 	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/archive", s.protectAuctionsMiddleware(s.handleSetAuctionLotActiveStatus(false), "auctionId"))
 	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/reinstate", s.protectAuctionsMiddleware(s.handleSetAuctionLotActiveStatus(true), "auctionId"))
+	mux.HandleFunc("GET /auctions/{auctionId}/lots/{lotId}/view", s.handleViewAuctionLot)
+
+	// TODO: finish these and make UI for them
+	mux.HandleFunc("GET /categories/{id}/auctions", s.handleGetCategoryAuctions)
+	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/make-favorite", s.onlyAuthorizedMiddleware(s.handleSetUserFavoriteAuctionLot(true)))
+	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/unmake-favorite", s.onlyAuthorizedMiddleware(s.handleSetUserFavoriteAuctionLot(false)))
+	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/bid", s.onlyNotAuctionOwnerMiddleware(s.onlyOpenAuction(http.HandlerFunc(s.handleMakeBid), "auctionId"), "auctionId"))
+	mux.Handle("GET /my-bids", s.onlyAuthorizedMiddleware(http.HandlerFunc(s.handleGetMyBids)))
+	mux.Handle("POST /auctions/{id}/close", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleCloseAuction), "id"))
 
 	mux.HandleFunc("POST /auctions", s.handleCreateAuction)
 	mux.HandleFunc("DELETE /auctions/{id}", s.handleDeleteAuction)

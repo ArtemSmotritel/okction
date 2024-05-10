@@ -2,14 +2,132 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/utils"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"slices"
 	"strconv"
 )
+
+func (s *Server) onlyActiveAuction(next http.Handler, auctionIdWildcard string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auctionId, err := strconv.ParseInt(r.PathValue(auctionIdWildcard), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+			return
+		}
+
+		status, err := s.store.CheckAuctionStatus(auctionId)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				s.handleNotFound(w, r)
+				return
+			}
+			s.internalError(w, r)
+			return
+		}
+
+		if !status.IsActive {
+			s.statusConflict(w, r, "This auction is archived")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) onlyOpenAuctionLot(next http.Handler, auctionLotIdWildcard string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lotId, err := strconv.ParseInt(r.PathValue(auctionLotIdWildcard), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction lot id in path: %s", r.PathValue("lotId")))
+			return
+		}
+
+		status, err := s.store.CheckAuctionLotStatus(lotId)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				s.handleNotFound(w, r)
+				return
+			}
+			s.internalError(w, r)
+			return
+		}
+
+		if !status.IsActive {
+			s.statusConflict(w, r, "This auction lot is archived")
+			return
+		}
+
+		if status.IsClosed {
+			s.statusConflict(w, r, "This auction lot is already closed")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) onlyOpenAuction(next http.Handler, auctionIdWildcard string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auctionId, err := strconv.ParseInt(r.PathValue(auctionIdWildcard), 10, 64)
+		if err != nil {
+			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+			return
+		}
+
+		status, err := s.store.CheckAuctionStatus(auctionId)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				s.handleNotFound(w, r)
+				return
+			}
+			s.internalError(w, r)
+			return
+		}
+
+		if !status.IsActive {
+			s.statusConflict(w, r, "This auction is archived")
+			return
+		}
+
+		if status.IsClosed {
+			s.statusConflict(w, r, "This auction is already closed")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) onlyNotAuctionOwnerMiddleware(next http.Handler, auctionIdWildcard string) http.Handler {
+	return s.onlyAuthorizedMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+			if err != nil {
+				s.handleUnauthorized(w, r)
+				return
+			}
+
+			auctionId, err := strconv.ParseInt(r.PathValue(auctionIdWildcard), 10, 64)
+			if err != nil {
+				s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
+				return
+			}
+
+			actualOwnerId, err := s.store.GetOwnerIDByAuctionID(auctionId)
+
+			if actualOwnerId == userId {
+				s.statusConflict(w, r, "Owner of the auction cannot do this. Whatever it is you're doing")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}))
+}
 
 func (s *Server) onlyAuthorizedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +137,7 @@ func (s *Server) onlyAuthorizedMiddleware(next http.Handler) http.Handler {
 		}
 
 		if !isAuth {
-			w.WriteHeader(http.StatusUnauthorized)
-			handler := templates.NewErrorPageHandler(templates.Unauthorized)
-			handler.ServeHTTP(w, r)
+			s.handleUnauthorized(w, r)
 			return
 		}
 
@@ -34,9 +150,7 @@ func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard 
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
 			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				handler := templates.NewErrorPageHandler(templates.Unauthorized)
-				handler.ServeHTTP(w, r)
+				s.handleUnauthorized(w, r)
 				return
 			}
 
@@ -46,12 +160,11 @@ func (s *Server) protectAuctionsMiddleware(next http.Handler, auctionIdWildcard 
 				return
 			}
 
+			// TODO handle error
 			actualOwnerId, err := s.store.GetOwnerIDByAuctionID(auctionId)
 
 			if userId != actualOwnerId {
-				w.WriteHeader(http.StatusForbidden)
-				handler := templates.NewErrorPageHandler(templates.Forbidden)
-				handler.ServeHTTP(w, r)
+				s.handleForbidden(w, r)
 				return
 			}
 

@@ -65,6 +65,14 @@ func IdToString(id int64) string {
 	return strconv.FormatInt(id, 10)
 }
 
+func IntToString(num int) string {
+	return strconv.Itoa(num)
+}
+
+func IsDecimalZero(num decimal.Decimal) bool {
+	return num.Compare(decimal.Zero) == 0
+}
+
 // StringToDecimal converts a string input into the decimal.Decimal{} type, with decimal.Zero being the default value for an empty string
 func StringToDecimal(input string) (decimal.Decimal, error) {
 	if input == "" {
@@ -72,4 +80,8 @@ func StringToDecimal(input string) (decimal.Decimal, error) {
 	}
 
 	return decimal.NewFromString(input)
+}
+
+func DecimalToString(num decimal.Decimal) string {
+	return num.StringFixedBank(2)
 }

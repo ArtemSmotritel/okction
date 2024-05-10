@@ -80,3 +80,60 @@ templ profileEditForm(user *types.User, errors map[string]string) {
         <input type="submit" value="Change" />
     </form>
 }
+
+templ savedAuctionLotsPage(lots []types.AuctionLot) {
+    @main() {
+        <section>
+            <h2>Your saved auction lots</h2>
+            <ul>
+                for _, l := range lots {
+                    @auctionLotViewListItem(&l)
+                }
+            </ul>
+        </section>
+    }
+}
+
+templ userBidsPage(bids []types.UserBid) {
+    @main() {
+        <section>
+            <h2>Your bids</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Value</th>
+                        <th scope="col">Made at</th>
+                        <th scope="col">Did win</th>
+                        <th scope="col">Auction lot</th>
+                        <th scope="col">Is Lot Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    for _, b := range bids {
+                        <tr>
+                            <td>{ utils.IdToString(b.ID) }</td>
+                            <td>{ b.Value.StringFixedBank(2) }</td>
+                            <td>{ b.CreatedAt.Format("15:04 Mon, the 2 of Jan") }</td>
+                            <td>
+                                if b.IsWonByUser {
+                                    <mark>Yes</mark>
+                                } else {
+                                    No
+                                }
+                            </td>
+                            <td>{ utils.IdToString(b.AuctionLotId) }</td>
+                            <td>
+                                if b.IsLotActive {
+                                    Yes
+                                } else {
+                                    No
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    }
+}

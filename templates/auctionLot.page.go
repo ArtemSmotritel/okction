@@ -68,3 +68,44 @@ func (a *AuctionLotEditPageHandler) newAuctionLotEditPage(ctx context.Context) t
 
 	return builder.Build()
 }
+
+func NewViewAuctionLotPageHandler(pageParam *types.AuctionLotViewPageParam, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newViewAuctionLotPage(pageParam, ctx),
+	}
+}
+
+func newViewAuctionLotPage(pageParam *types.AuctionLotViewPageParam, ctx context.Context) templ.Component {
+	hxBoosted, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		hxBoosted = false
+	}
+
+	if hxBoosted {
+		return viewAuctionLotPage(pageParam)
+	}
+
+	isAuthorized, err := utils.ExtractValueFromContext[bool](ctx, "isAuthorized")
+	if err != nil {
+		isAuthorized = false
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(isAuthorized))
+	builder.AppendComponent(viewAuctionLotPage(pageParam))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
+}
+
+func NewSavedUnsavedAuctionLotButtonHandler(auctionId, lotId int64, doesUserFollowLot bool) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: followAuctionLotButton(auctionId, lotId, doesUserFollowLot),
+	}
+}
+
+func NewMakeBidErrorBadRequestHandler(lot *types.AuctionLot, canBeBidOn bool, err string) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: makeBidOnAuctionLotForm(lot, canBeBidOn, err),
+	}
+}

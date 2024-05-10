@@ -14,8 +14,8 @@ type InMemoryStore struct {
 	auctionLots []types.AuctionLot
 }
 
-var auctionId int64 = 0
-var auctionLotId int64 = 0
+var inMemoryAuctionId int64 = 0
+var inMemoryAuctionLotId int64 = 0
 
 func NewInMemoryStore() *InMemoryStore {
 	return &InMemoryStore{}
@@ -187,9 +187,9 @@ func (s *InMemoryStore) GetAuctions() ([]types.Auction, error) {
 }
 
 func (s *InMemoryStore) SaveAuction(auction *types.Auction) (*types.Auction, error) {
-	auction.ID = auctionId
+	auction.ID = inMemoryAuctionId
 	s.auctions = append(s.auctions, types.CopyAuction(auction))
-	auctionId++
+	inMemoryAuctionId++
 
 	return auction, nil
 }
@@ -239,9 +239,9 @@ func (s *InMemoryStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Auct
 }
 
 func (s *InMemoryStore) SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error) {
-	auctionLotId++
+	inMemoryAuctionLotId++
 	l := types.CopyAuctionLot(auctionLot)
-	l.ID = auctionLotId
+	l.ID = inMemoryAuctionLotId
 
 	s.auctionLots = append(s.auctionLots, *l)
 
