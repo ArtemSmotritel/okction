@@ -548,15 +548,10 @@ func (p *PostgresqlStore) SaveAuctionLotBid(request *types.BidMakeRequest) (*typ
 }
 
 func (p *PostgresqlStore) GetUserBids(userId int64) ([]types.UserBid, error) {
-	query := `SELECT DISTINCT ON (b.id) b.id, b.value, b.user_id, b.auction_lot_id, b.created_at, l.is_active, w.user_id = $1 AS did FROM bid b
-		LEFT JOIN auction_lot l on l.id = b.auction_lot_id
-		LEFT JOIN auction_lot_winner w on w.auction_lot_id = l.id
-		WHERE b.user_id = $1
-		AND (l.is_active = true OR w.user_id = $1)`
-	//SELECT DISTINCT ON (b.id) b.id, b.value, b.auction_lot_id, l.is_active, COALESCE((w.bid_id = b.id), false) AS did_win_lot FROM bid b
-	//LEFT JOIN auction_lot l on l.id = b.auction_lot_id
-	//LEFT JOIN auction_lot_winner w on w.bid_id = b.id
-	//WHERE b.user_id = 5;
+	query := `SELECT b.id, b.value, b.user_id, b.auction_lot_id, b.created_at, l.is_active, COALESCE((w.bid_id = b.id), false) AS did_win_lot FROM bid b
+	LEFT JOIN auction_lot l on l.id = b.auction_lot_id
+	LEFT JOIN auction_lot_winner w on w.bid_id = b.id
+	WHERE b.user_id = $1 ORDER BY b.created_at DESC`
 
 	rows, err := p.connection.Query(context.Background(), query, userId)
 	if err != nil {

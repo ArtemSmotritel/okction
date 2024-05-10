@@ -99,3 +99,27 @@ func newSavedAuctionLotsPage(lots []types.AuctionLot, ctx context.Context) templ
 
 	return builder.Build()
 }
+
+func NewUserBidsPageHandler(bids []types.UserBid, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newUserBidsPage(bids, ctx),
+	}
+}
+
+func newUserBidsPage(bids []types.UserBid, ctx context.Context) templ.Component {
+	isHTMXRequest, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		isHTMXRequest = false
+	}
+
+	if isHTMXRequest {
+		return userBidsPage(bids)
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(ctx.Value("isAuthorized").(bool)))
+	builder.AppendComponent(userBidsPage(bids))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
+}

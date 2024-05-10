@@ -90,6 +90,6 @@ func (s *Server) handleGetMyBids(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
-	_ = bids[1]
+	handler := templates.NewUserBidsPageHandler(bids, r.Context())
+	handler.ServeHTTP(w, r)
 }
