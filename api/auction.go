@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
@@ -123,7 +122,7 @@ func (s *Server) handleGetAuctions(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetAuctionView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 
 	if err != nil {
@@ -143,11 +142,32 @@ func (s *Server) handleGetAuctionByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(auction); err != nil {
-		s.logger.Println("ERROR: ", err.Error())
+	lots, err := s.store.GetAuctionLotsByAuctionID(auction.ID)
+	if err != nil {
+		s.internalError(w, r)
+		return
 	}
+
+	user, err := s.store.GetUserByID(auction.OwnerId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	isAuth, err := utils.ExtractValueFromContext[bool](r.Context(), "isAuthorized")
+	if err != nil {
+		isAuth = false
+	}
+
+	pageParam := types.AuctionViewPageParam{
+		Auction:      auction,
+		Lots:         lots,
+		Owner:        user,
+		IsAuthorized: isAuth,
+	}
+
+	handler := templates.NewAuctionViewHandler(&pageParam, r.Context())
+	handler.ServeHTTP(w, r)
 }
 
 func (s *Server) handleCreateAuction(w http.ResponseWriter, r *http.Request) {

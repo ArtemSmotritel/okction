@@ -65,7 +65,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 
 	mux.HandleFunc("GET /auctions", s.handleGetAuctions)
 	mux.HandleFunc("GET /auctions/new", s.handleNewAuction)
-	mux.HandleFunc("GET /auctions/{id}", s.handleGetAuctionByID)
+	mux.HandleFunc("GET /auctions/{id}/view", s.handleGetAuctionView)
 
 	mux.Handle("PUT /auctions/{id}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuction), "id"))
 	mux.Handle("POST /auctions/{id}/archive", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleArchiveAuction), "id"))
@@ -73,6 +73,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 	mux.Handle("PUT /auctions/{auctionId}/lots/{lotId}", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleUpdateAuctionLot), "auctionId"))
 	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/archive", s.protectAuctionsMiddleware(s.handleSetAuctionLotActiveStatus(false), "auctionId"))
 	mux.Handle("POST /auctions/{auctionId}/lots/{lotId}/reinstate", s.protectAuctionsMiddleware(s.handleSetAuctionLotActiveStatus(true), "auctionId"))
+	mux.HandleFunc("GET /auctions/{auctionId}/lots/{lotId}/view", s.handleViewAuctionLot)
 
 	// TODO: finish these and make UI for them
 	mux.HandleFunc("GET /categories/{id}/auctions", s.handleGetCategoryAuctions)

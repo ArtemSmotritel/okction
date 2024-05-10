@@ -207,3 +207,10 @@ func (b *AuctionsListPageParameterBuilder) SetCategoryName(name string) *Auction
 func (b *AuctionsListPageParameterBuilder) Build() *AuctionsListPageParameter {
 	return b.param
 }
+
+type AuctionViewPageParam struct {
+	Auction      *Auction
+	Lots         []AuctionLot
+	Owner        *User
+	IsAuthorized bool
+}

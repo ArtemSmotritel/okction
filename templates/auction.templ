@@ -358,3 +358,55 @@ templ auctionsList(pageParam *types.AuctionsListPageParameter) {
         </section>
     }
 }
+
+templ viewAuctionPage(param *types.AuctionViewPageParam) {
+    @main() {
+        <section class="grid">
+            <section>
+                <hgroup>
+                    <h2>
+                        { param.Auction.Name }
+                    </h2>
+                    <h3>
+                        Created At: { param.Auction.CreatedAt.Format("15:04 Mon, the 2 of Jan") }
+                    </h3>
+                </hgroup>
+                if param.Owner.Phone != "" {
+                    if param.IsAuthorized {
+                        if param.Owner.Phone != "" {
+                            <blockquote>
+                                { param.Owner.Phone }
+                                <footer>
+                                    <cite>— { param.Owner.FullName }</cite>
+                                </footer>
+                            </blockquote>
+                        }
+                    } else {
+                        <small>Login to see the owner number</small>
+                    }
+                }
+                <hr />
+                <p style="height: 400px; overflow: auto;">
+                    { param.Auction.Description }
+                </p>
+            </section>
+            <section>
+                <hgroup>
+                    <h3>Auction Lots</h3>
+                    if len(param.Lots) == 0 {
+                        <h4>There are no lots in this auction yet</h4>
+                    } else if len(param.Lots) == 1 {
+                        <h4>There is 1 lot in this auction</h4>
+                    } else {
+                        <h4>There are { utils.IntToString(len(param.Lots)) } lots in this auction</h4>
+                    }
+                </hgroup>
+                <ul>
+                    for _, l := range param.Lots {
+                        @auctionLotViewListItem(&l)
+                    }
+                </ul>
+            </section>
+        </section>
+    }
+}

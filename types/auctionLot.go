@@ -58,3 +58,8 @@ func NewAuctionLotUpdateRequest(values url.Values, lotId, auctionId int64) (*Auc
 		BinPriceStr:     values.Get("binPrice"),
 	}, nil
 }
+
+type AuctionLotViewPageParam struct {
+	Lot               *AuctionLot
+	DoesUserFollowLot bool
+}

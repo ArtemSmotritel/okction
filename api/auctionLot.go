@@ -132,7 +132,7 @@ func (s *Server) handleUpdateAuctionLot(w http.ResponseWriter, r *http.Request) 
 			BinPrice:     updateRequest.BinPrice,
 		}
 		// TODO: handle not 2xx status codes as intended
-		//w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		handler := templates.NewAuctionLotEditFormErrorBadRequestHandler(auctionLotWithBadInfo, validator.Errors, categories)
 		handler.ServeHTTP(w, r)
 		return
@@ -187,7 +187,7 @@ func (s *Server) handleSetAuctionLotActiveStatus(isActive bool) http.HandlerFunc
 
 func (s *Server) handleSetUserFavoriteAuctionLot(isFavorite bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
+		auctionId, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
 		if err != nil {
 			s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("auctionId")))
 			return
@@ -211,6 +211,48 @@ func (s *Server) handleSetUserFavoriteAuctionLot(isFavorite bool) http.HandlerFu
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		handler := templates.NewSavedUnsavedAuctionLotButtonHandler(auctionId, lotId, isFavorite)
+		handler.ServeHTTP(w, r)
 	}
+}
+
+func (s *Server) handleViewAuctionLot(w http.ResponseWriter, r *http.Request) {
+	_, err := strconv.ParseInt(r.PathValue("auctionId"), 10, 64)
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("auctionId")))
+		return
+	}
+
+	lotId, err := strconv.ParseInt(r.PathValue("lotId"), 10, 64)
+	if err != nil {
+		s.badRequestError(w, r, fmt.Sprintf("Bad auction lot id in path: %s", r.PathValue("lotId")))
+		return
+	}
+
+	userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+	if err != nil {
+		// TODO : make user there is userId in each protected request handler
+		s.badRequestError(w, r, "Not authorized")
+		return
+	}
+
+	lot, err := s.store.GetAuctionLotByID(lotId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	doesUserFollowLot, err := s.store.DoesUserSavedAuctionLot(userId, lotId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	pageParam := types.AuctionLotViewPageParam{
+		Lot:               lot,
+		DoesUserFollowLot: doesUserFollowLot,
+	}
+
+	handler := templates.NewViewAuctionLotPageHandler(&pageParam, r.Context())
+	handler.ServeHTTP(w, r)
 }
