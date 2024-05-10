@@ -248,9 +248,16 @@ func (s *Server) handleViewAuctionLot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	canBeBidOn, err := s.store.CanBidOnAuctionLot(lotId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
 	pageParam := types.AuctionLotViewPageParam{
 		Lot:               lot,
 		DoesUserFollowLot: doesUserFollowLot,
+		CanBeBidOn:        canBeBidOn,
 	}
 
 	handler := templates.NewViewAuctionLotPageHandler(&pageParam, r.Context())

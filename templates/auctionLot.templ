@@ -207,7 +207,13 @@ templ editAuctionLotForm(auctionLot *types.AuctionLot, errors map[string]string,
 
 templ auctionLotViewListItem(lot *types.AuctionLot) {
     <li>
-        <h4><a class="contrast" href={ utils.ConvertToTemplURL("auctions", lot.AuctionID, "lots", lot.ID, "view") }>{ lot.Name }</a></h4>
+        <h4>
+            if !lot.CanBeBidOn {
+                <del><a data-tooltip="This lot can't be bid on" class="contrast" href={ utils.ConvertToTemplURL("auctions", lot.AuctionID, "lots", lot.ID, "view") }>{ lot.Name }</a></del>
+            } else {
+                <a class="contrast" href={ utils.ConvertToTemplURL("auctions", lot.AuctionID, "lots", lot.ID, "view") }>{ lot.Name }</a>
+            }
+        </h4>
     </li>
 }
 
@@ -228,19 +234,7 @@ templ viewAuctionLotPage(param *types.AuctionLotViewPageParam) {
             <hr />
             <div class="grid" style="align-items: start;">
                 @followAuctionLotButton(param.Lot.AuctionID, param.Lot.ID, param.DoesUserFollowLot)
-                <form action="">
-                    <fieldset role="group">
-                        <input
-                            type="number"
-                            step="0.01"
-                            name="bid"
-                            placeholder="Enter your bid"
-                            min={param.Lot.MinimalBid.StringFixedBank(2)}
-                            autocomplete="off"
-                        />
-                        <input type="submit" value="Bid!" />
-                    </fieldset>
-                </form>
+                @makeBidOnAuctionLotForm(param.Lot, param.CanBeBidOn, "")
             </div>
             <table>
                 <thead>
@@ -295,4 +289,33 @@ templ followAuctionLotButton(auctionId, lotId int64, doesUserFollowLot bool) {
             Save this lot
         }
     </button>
+}
+
+templ makeBidOnAuctionLotForm(lot *types.AuctionLot, canBeBidOn bool, err string) {
+    <form hx-swap="none" hx-post={ utils.ConvertToTemplStringURL("auctions", lot.AuctionID, "lots", lot.ID, "bid") }>
+        <fieldset role="group">
+            <input
+                if !canBeBidOn {
+                    disabled
+                    placeholder="This lot can't be bid on"
+                } else {
+                    placeholder="Enter your bid"
+                }
+                id="value-input"
+                type="number"
+                step="0.01"
+                name="value"
+                min={lot.MinimalBid.StringFixedBank(2)}
+                autocomplete="off"
+                if err != "" {
+                    aria-invalid="true"
+                    aria-describedby="value-input-helper"
+                }
+            />
+            <input type="submit" value="Bid!" />
+            if err != "" {
+                <small id="value-input-helper">{ err }</small>
+            }
+        </fieldset>
+    </form>
 }

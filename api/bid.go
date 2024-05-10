@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/artemsmotritel/oktion/templates"
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
 	"github.com/artemsmotritel/oktion/validation"
@@ -35,7 +36,7 @@ func (s *Server) handleMakeBid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := types.NewBidMakeRequest(r.Form, lotId, userId)
-	lotProvider := validation.SavedAuctionProvider{
+	lotProvider := validation.SavedAuctionLotProvider{
 		Lot: auctionLot,
 	}
 	validator := validation.NewBidMakeValidator(request, &lotProvider)
@@ -45,23 +46,34 @@ func (s *Server) handleMakeBid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
-		// TODO
-		return
-	}
-
-	if request.Value.Cmp(auctionLot.BinPrice) >= 0 {
-		// TODO finish by saving both bid and making the auction closed
-	}
-
-	bid, err := s.store.SaveAuctionLotBid(request)
+	// TODO move to validator
+	canBeBidOn, err := s.store.CanBidOnAuctionLot(lotId)
 	if err != nil {
 		s.internalError(w, r)
 		return
 	}
 
-	// TODO
-	_ = bid.ID
+	if !canBeBidOn {
+		validator.Errors["value"] = "This lot can't be bid on"
+	}
+
+	if !ok || !canBeBidOn {
+		handler := templates.NewMakeBidErrorBadRequestHandler(auctionLot, canBeBidOn, validator.Errors["value"])
+		handler.ServeHTTP(w, r)
+		return
+	}
+
+	if request.Value.Cmp(auctionLot.BinPrice) >= 0 {
+
+	}
+
+	_, err = s.store.SaveAuctionLotBid(request)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s *Server) handleGetMyBids(w http.ResponseWriter, r *http.Request) {

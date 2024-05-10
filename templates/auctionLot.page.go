@@ -103,3 +103,9 @@ func NewSavedUnsavedAuctionLotButtonHandler(auctionId, lotId int64, doesUserFoll
 		Template: followAuctionLotButton(auctionId, lotId, doesUserFollowLot),
 	}
 }
+
+func NewMakeBidErrorBadRequestHandler(lot *types.AuctionLot, canBeBidOn bool, err string) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: makeBidOnAuctionLotForm(lot, canBeBidOn, err),
+	}
+}

@@ -223,7 +223,7 @@ func (p *PostgresqlStore) DeleteAuction(id int64) error {
 }
 
 func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.AuctionLot, error) {
-	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed FROM auction_lot WHERE auction_id = $1"
+	query := "SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed, can_auction_lot_be_bid_on(id) FROM auction_lot WHERE auction_id = $1"
 	rows, err := p.connection.Query(context.Background(), query, auctionId)
 	if err != nil {
 		p.logError(err, "get auction lots by auction id")
@@ -235,7 +235,7 @@ func (p *PostgresqlStore) GetAuctionLotsByAuctionID(auctionId int64) ([]types.Au
 	for rows.Next() {
 		var lot types.AuctionLot
 
-		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed); err != nil {
+		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed, &lot.CanBeBidOn); err != nil {
 			p.logError(err, "get auction lots by auction id; rows")
 			return nil, err
 		}
@@ -302,12 +302,12 @@ func (p *PostgresqlStore) GetAuctionLotCount(auctionId int64) (int, error) {
 }
 
 func (p *PostgresqlStore) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
-	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed FROM auction_lot WHERE id = $1"
+	query := "SELECT name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id, COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed, can_auction_lot_be_bid_on(id) FROM auction_lot WHERE id = $1"
 
 	var lot types.AuctionLot
 	lot.ID = auctionLotId
 
-	returningArgs := []any{&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed}
+	returningArgs := []any{&lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed, &lot.CanBeBidOn}
 
 	err := p.connection.QueryRow(context.Background(), query, auctionLotId).Scan(returningArgs...)
 	if err != nil {
@@ -388,7 +388,7 @@ func (p *PostgresqlStore) SetAuctionActiveStatus(id int64, isActive bool) error 
 
 func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.AuctionLotUpdateRequest) (*types.AuctionLot, error) {
 	updateLotCategorySubQuery := "WITH category_subquery AS (INSERT INTO auction_lot_categories (auction_lot_id, category_id) VALUES (@id, @category_id) ON CONFLICT (auction_lot_id) DO UPDATE SET category_id = @category_id RETURNING category_id), "
-	updateLotQuery := "lot_subquery AS (UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at, is_closed) "
+	updateLotQuery := "lot_subquery AS (UPDATE auction_lot SET name = @name, description = @description, minimal_bid = @minimal_bid, reserve_price = @reserve_price, bin_price = @bin_price, updated_at = @updated_at WHERE id = @id RETURNING name, description, is_active, minimal_bid, reserve_price, bin_price, updated_at, created_at, is_closed, can_auction_lot_be_bid_on(id)) "
 	selectQuery := "SELECT * FROM category_subquery, lot_subquery"
 
 	query := updateLotCategorySubQuery + updateLotQuery + selectQuery
@@ -406,7 +406,7 @@ func (p *PostgresqlStore) UpdateAuctionLot(auctionLotId int64, request *types.Au
 	var lot types.AuctionLot
 	lot.ID = auctionLotId
 
-	returningArgs := []any{&lot.CategoryId, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt, &lot.IsClosed}
+	returningArgs := []any{&lot.CategoryId, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.UpdatedAt, &lot.CreatedAt, &lot.IsClosed, &lot.CanBeBidOn}
 
 	if err := p.connection.QueryRow(context.Background(), query, args).Scan(returningArgs...); err != nil {
 		p.logError(err, "update auction lot")
@@ -643,7 +643,7 @@ func (p *PostgresqlStore) DoesUserSavedAuctionLot(userId, auctionLotId int64) (b
 
 func (p *PostgresqlStore) GetSavedAuctionLots(userId int64) ([]types.AuctionLot, error) {
 	query := `SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id,
-       COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed
+       COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed, can_auction_lot_be_bid_on(id)
 	FROM auction_lot
 	INNER JOIN saved_auction_lots s ON s.auction_lot_id = auction_lot.id
 	WHERE s.user_id = $1`
@@ -659,7 +659,7 @@ func (p *PostgresqlStore) GetSavedAuctionLots(userId int64) ([]types.AuctionLot,
 	for rows.Next() {
 		var lot types.AuctionLot
 
-		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed); err != nil {
+		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed, &lot.CanBeBidOn); err != nil {
 			p.logError(err, "get saved auction lots by user id; rows")
 			return nil, err
 		}
@@ -673,4 +673,16 @@ func (p *PostgresqlStore) GetSavedAuctionLots(userId int64) ([]types.AuctionLot,
 	}
 
 	return lots, err
+}
+
+func (p *PostgresqlStore) CanBidOnAuctionLot(auctionLotId int64) (bool, error) {
+	query := `SELECT can_auction_lot_be_bid_on($1)`
+
+	var canBid bool
+	if err := p.connection.QueryRow(context.Background(), query, auctionLotId).Scan(&canBid); err != nil {
+		p.logError(err, "can bet on auction lot")
+		return false, err
+	}
+
+	return canBid, nil
 }

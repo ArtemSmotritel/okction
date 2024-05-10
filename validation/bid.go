@@ -3,6 +3,7 @@ package validation
 import (
 	"github.com/artemsmotritel/oktion/types"
 	"github.com/artemsmotritel/oktion/utils"
+	"github.com/shopspring/decimal"
 )
 
 type BidMakeValidator struct {
@@ -15,11 +16,11 @@ type AuctionLotProvider interface {
 	GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error)
 }
 
-type SavedAuctionProvider struct {
+type SavedAuctionLotProvider struct {
 	Lot *types.AuctionLot
 }
 
-func (s *SavedAuctionProvider) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
+func (s *SavedAuctionLotProvider) GetAuctionLotByID(auctionLotId int64) (*types.AuctionLot, error) {
 	return s.Lot, nil
 }
 
@@ -51,12 +52,14 @@ func (v *BidMakeValidator) Validate() (bool, error) {
 		v.Errors["value"] = "Bid Value is required"
 	} else if value, err := utils.StringToDecimal(v.Request.ValueStr); err != nil {
 		v.Errors["value"] = "Bid Value must be a number"
+	} else if value.Compare(decimal.Zero) < 0 {
+		v.Errors["value"] = "Bid Value can't be less than zero"
 	} else {
 		v.Request.Value = value
-	}
 
-	if v.Request.Value.Cmp(lot.MinimalBid) < 0 {
-		v.Errors["value"] = "Bid Value can't be less than Lot Minimal Bid"
+		if v.Request.Value.Cmp(lot.MinimalBid) < 0 {
+			v.Errors["value"] = "Bid Value can't be less than Lot Minimal Bid"
+		}
 	}
 
 	return len(v.Errors) == 0, nil
