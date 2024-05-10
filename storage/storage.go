@@ -25,6 +25,7 @@ type Storage interface {
 	SetAuctionActiveStatus(auctionId int64, isActive bool) error
 	CloseAuction(auctionId int64) error
 	CheckAuctionStatus(auctionId int64) (utils.Status, error)
+	SetWinnersToAllAuctionLots(auctionId int64) error
 
 	GetAuctionLotsByAuctionID(auctionId int64) ([]types.AuctionLot, error)
 	SaveAuctionLot(auctionLot *types.AuctionLot) (*types.AuctionLot, error)
@@ -40,6 +41,8 @@ type Storage interface {
 
 	SaveAuctionLotBid(request *types.BidMakeRequest) (*types.Bid, error)
 	GetUserBids(userId int64) ([]types.UserBid, error)
+	MarkBidAsWin(bidId int64) error
+	CloseAuctionLot(id int64) error
 
 	GetCategories() ([]types.Category, error)
 

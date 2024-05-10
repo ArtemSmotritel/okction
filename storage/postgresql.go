@@ -547,6 +547,44 @@ func (p *PostgresqlStore) SaveAuctionLotBid(request *types.BidMakeRequest) (*typ
 	return &bid, nil
 }
 
+func (p *PostgresqlStore) CloseAuctionLot(id int64) error {
+	query := "UPDATE auction_lot SET is_closed = TRUE WHERE id = $1"
+
+	_, err := p.connection.Exec(context.Background(), query, id)
+	if err != nil {
+		p.logError(err, "close auction lot")
+		return err
+	}
+
+	return nil
+}
+
+func (p *PostgresqlStore) MarkBidAsWin(bidId int64) error {
+	query := "INSERT INTO auction_lot_winner(bid_id) VALUES ($1)"
+
+	_, err := p.connection.Exec(context.Background(), query, bidId)
+	if err != nil {
+		p.logError(err, "mark bid as win")
+		return err
+	}
+
+	return nil
+}
+
+func (p *PostgresqlStore) SetWinnersToAllAuctionLots(auctionId int64) error {
+	query := `WITH lots AS (SELECT id FROM auction_lot WHERE auction_id = $1 AND NOT is_closed AND is_active), bids AS (
+	SELECT id FROM bid WHERE auction_lot_id IN (SELECT id FROM lots))
+	INSERT INTO auction_lot_winner (bid_id) SELECT id FROM bids
+	`
+
+	_, err := p.connection.Exec(context.Background(), query, auctionId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *PostgresqlStore) GetUserBids(userId int64) ([]types.UserBid, error) {
 	query := `SELECT b.id, b.value, b.user_id, b.auction_lot_id, b.created_at, l.is_active, COALESCE((w.bid_id = b.id), false) AS did_win_lot FROM bid b
 	LEFT JOIN auction_lot l on l.id = b.auction_lot_id

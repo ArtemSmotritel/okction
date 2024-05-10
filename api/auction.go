@@ -342,12 +342,31 @@ func (s *Server) handleCloseAuction(w http.ResponseWriter, r *http.Request) {
 		s.badRequestError(w, r, fmt.Sprintf("Bad auction id in path: %s", r.PathValue("id")))
 		return
 	}
+	userId, err := utils.ExtractValueFromContext[int64](r.Context(), "userId")
+	if err != nil {
+		// TODO : make user there is userId in each protected request handler
+		s.badRequestError(w, r, "Not authorized")
+		return
+	}
+
+	if err = s.store.SetWinnersToAllAuctionLots(id); err != nil {
+		s.internalError(w, r)
+		return
+	}
 
 	if err = s.store.CloseAuction(id); err != nil {
 		s.internalError(w, r)
 		return
 	}
 
-	// TODO finish
-	w.WriteHeader(http.StatusNoContent)
+	auctions, err := s.store.GetAuctionsByOwnerId(userId)
+	if err != nil {
+		s.internalError(w, r)
+		return
+	}
+
+	w.Header().Set("HX-Retarget", "#main")
+	w.Header().Set("HX-Reswap", "outerHTML")
+	handler := templates.NewMyAuctionsPageHandler(auctions)
+	handler.ServeHTTP(w, r)
 }

@@ -63,14 +63,22 @@ func (s *Server) handleMakeBid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.Value.Cmp(auctionLot.BinPrice) >= 0 {
-
-	}
-
-	_, err = s.store.SaveAuctionLotBid(request)
+	bid, err := s.store.SaveAuctionLotBid(request)
 	if err != nil {
 		s.internalError(w, r)
 		return
+	}
+
+	if request.Value.Cmp(auctionLot.BinPrice) >= 0 {
+		if err = s.store.MarkBidAsWin(bid.ID); err != nil {
+			s.internalError(w, r)
+			return
+		}
+
+		if err = s.store.CloseAuctionLot(lotId); err != nil {
+			s.internalError(w, r)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)

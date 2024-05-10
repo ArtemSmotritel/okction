@@ -260,6 +260,35 @@ templ myAuctionsPage(auctions []types.Auction) {
                 </footer>
             </article>
         </dialog>
+        <dialog id="confirm-close-dialog">
+            <article>
+                <header>
+                    <button
+                    aria-label="Close"
+                    rel="prev"
+                    value="cancel"
+                    onclick="toggleModal(event)"
+                    ></button>
+                    <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                    Do you really want to close this auction?
+                </p>
+                <footer>
+                    <button
+                    role="button"
+                    class="secondary"
+                    onclick="toggleModal(event)"
+                    value="cancel"
+                    >
+                        Cancel
+                    </button>
+                    <button value="confirm" autofocus onclick="toggleModal(event)">
+                        Confirm
+                    </button>
+                </footer>
+            </article>
+        </dialog>
     }
 }
 
@@ -298,6 +327,19 @@ templ auctionListItem(auction *types.Auction) {
                 }
                 data-confirm-trigger="true"
                 class="secondary"
+                hx-swap="outerHTML"
+                hx-target="#main"/>
+                <input
+                type="button"
+                if auction.IsActive {
+                    value="Close"
+                    hx-post={ utils.ConvertToTemplStringURL("auctions", auction.ID, "close") }
+                    hx-confirm="confirm-close-dialog"
+                } else {
+                    disabled
+                }
+                data-confirm-trigger="true"
+                class="contrast"
                 hx-swap="outerHTML"
                 hx-target="#main"/>
             </div>
