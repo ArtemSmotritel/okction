@@ -34,6 +34,8 @@ type Storage interface {
 	SetAuctionLotActiveStatus(auctionLotId int64, isActive bool) error
 	SetUserFavoriteAuctionLot(userId, auctionLotId int64, isFavorite bool) error
 	CheckAuctionLotStatus(lotId int64) (utils.Status, error)
+	GetSavedAuctionLots(userId int64) ([]types.AuctionLot, error)
+	DoesUserSavedAuctionLot(userId, auctionLotId int64) (bool, error)
 
 	SaveAuctionLotBid(request *types.BidMakeRequest) (*types.Bid, error)
 	GetUserBids(userId int64) ([]types.UserBid, error)

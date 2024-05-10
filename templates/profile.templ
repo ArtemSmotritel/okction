@@ -80,3 +80,16 @@ templ profileEditForm(user *types.User, errors map[string]string) {
         <input type="submit" value="Change" />
     </form>
 }
+
+templ savedAuctionLotsPage(lots []types.AuctionLot) {
+    @main() {
+        <section>
+            <h2>Your saved auction lots</h2>
+            <ul>
+                for _, l := range lots {
+                    @auctionLotViewListItem(&l)
+                }
+            </ul>
+        </section>
+    }
+}

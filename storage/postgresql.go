@@ -625,3 +625,52 @@ func (p *PostgresqlStore) CheckAuctionLotStatus(lotId int64) (utils.Status, erro
 
 	return status, nil
 }
+
+func (p *PostgresqlStore) DoesUserSavedAuctionLot(userId, auctionLotId int64) (bool, error) {
+	query := "SELECT auction_lot_id FROM saved_auction_lots WHERE user_id = $1 AND auction_lot_id = $2"
+
+	var lotId int64
+	if err := p.connection.QueryRow(context.Background(), query, userId, auctionLotId).Scan(&lotId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		p.logError(err, "does user saved auction lot")
+		return false, err
+	}
+
+	return lotId == auctionLotId, nil
+}
+
+func (p *PostgresqlStore) GetSavedAuctionLots(userId int64) ([]types.AuctionLot, error) {
+	query := `SELECT id, name, description, is_active, minimal_bid, reserve_price, bin_price, created_at, updated_at, deleted_at, auction_id,
+       COALESCE((SELECT category_id FROM auction_lot_categories WHERE auction_lot_id = $1), 0), is_closed
+	FROM auction_lot
+	INNER JOIN saved_auction_lots s ON s.auction_lot_id = auction_lot.id
+	WHERE s.user_id = $1`
+
+	rows, err := p.connection.Query(context.Background(), query, userId)
+	if err != nil {
+		p.logError(err, "get saved auction lots by user id")
+		return nil, err
+	}
+	defer rows.Close()
+
+	lots := make([]types.AuctionLot, 0)
+	for rows.Next() {
+		var lot types.AuctionLot
+
+		if err := rows.Scan(&lot.ID, &lot.Name, &lot.Description, &lot.IsActive, &lot.MinimalBid, &lot.ReservePrice, &lot.BinPrice, &lot.CreatedAt, &lot.UpdatedAt, &lot.DeletedAt, &lot.AuctionID, &lot.CategoryId, &lot.IsClosed); err != nil {
+			p.logError(err, "get saved auction lots by user id; rows")
+			return nil, err
+		}
+
+		lots = append(lots, lot)
+	}
+
+	if err = rows.Err(); err != nil {
+		p.logError(err, "get saved auction lots by user id; after rows")
+		return nil, err
+	}
+
+	return lots, err
+}

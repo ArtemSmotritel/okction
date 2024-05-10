@@ -47,6 +47,7 @@ func (s *Server) newConfiguredRouter() http.Handler {
 		s.handleNotFound(w, r)
 	})
 	mux.HandleFunc("GET /profile", s.handleGetProfile)
+	mux.Handle("GET /my-saved-auction-lots", s.onlyAuthorizedMiddleware(http.HandlerFunc(s.handleGetSavedAuctionLots)))
 	mux.Handle("GET /my-auctions", s.onlyAuthorizedMiddleware(http.HandlerFunc(s.handleGetMyAuctions)))
 	mux.Handle("GET /my-auctions/{id}/edit", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleEditAuction), "id"))
 	mux.Handle("POST /my-auctions/{id}/lots", s.protectAuctionsMiddleware(http.HandlerFunc(s.handleCreateAuctionLot), "id"))

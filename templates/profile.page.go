@@ -27,7 +27,7 @@ func NewProfilePageHandler(user *types.User) *ProfilePageHandler {
 			},
 			{
 				Name: "Your Favorite lots",
-				Link: "/my-favorite-lots",
+				Link: "/my-saved-auction-lots",
 			},
 			{
 				Name: "Your bids",
@@ -74,4 +74,28 @@ func NewProfileFormHandler(user *types.User) *utils.TemplateHandler {
 	return &utils.TemplateHandler{
 		Template: profileEditForm(user, nil),
 	}
+}
+
+func NewSavedAuctionLotsPageHandler(lots []types.AuctionLot, ctx context.Context) *utils.TemplateHandler {
+	return &utils.TemplateHandler{
+		Template: newSavedAuctionLotsPage(lots, ctx),
+	}
+}
+
+func newSavedAuctionLotsPage(lots []types.AuctionLot, ctx context.Context) templ.Component {
+	isHTMXRequest, err := utils.ExtractValueFromContext[bool](ctx, "hxBoosted")
+	if err != nil {
+		isHTMXRequest = false
+	}
+
+	if isHTMXRequest {
+		return savedAuctionLotsPage(lots)
+	}
+
+	builder := NewHTMLPageBuilder(root)
+	builder.AppendComponent(mainHeader(ctx.Value("isAuthorized").(bool)))
+	builder.AppendComponent(savedAuctionLotsPage(lots))
+	builder.AppendComponent(mainFooter())
+
+	return builder.Build()
 }
